@@ -1113,11 +1113,11 @@ qo_engine() {
 # --- status ----------------------------------------------------------------
 
 qo_status_starting() {
-  local mode=$1 map=${2:-} edition=${3:-}
+  local mode=$1 map=${2:-} edition=${3:-} join=${4:-}
   qo_mkdirs
-  python3 - "$mode" "$map" "$edition" "$(qo_status_file)" <<'PY'
+  python3 - "$mode" "$map" "$edition" "$join" "$(qo_status_file)" <<'PY'
 import json, os, sys, time
-mode, game_map, edition, path = sys.argv[1:5]
+mode, game_map, edition, join, path = sys.argv[1:6]
 data = {}
 if os.path.exists(path):
     try:
@@ -1133,6 +1133,7 @@ data.update({
     "window": False,
     "map": game_map or None,
     "edition": edition or None,
+    "join": join or None,
     "error": None,
     "fetch": None,
     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -1941,7 +1942,7 @@ qo_launch() {
   fi
 
   qo_mkdirs
-  qo_status_starting "$mode" "${map:-}" "$edition"
+  qo_status_starting "$mode" "${map:-}" "$edition" "${connect_host:-}"
   if [[ -z ${QO_FROM_PANEL:-} ]] && command -v omarchy-shell >/dev/null; then
     omarchy-shell shell summon quake.omarchy '{"mode":"starting"}' >/dev/null 2>&1 || true
   fi

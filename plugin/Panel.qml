@@ -602,7 +602,12 @@ Item {
 
           Text {
             width: parent.width
-            text: "Vulkan can take a few seconds. Super+Shift+Q changes maps after you’re in."
+            text: {
+              var launch = status && status.launch ? String(status.launch) : ""
+              if (launch === "host") return "Vulkan can take a few seconds. Super+Shift+Q changes maps once you’re in."
+              if (launch === "join") return "Vulkan can take a few seconds, then you’ll connect to " + (status && status.join ? String(status.join) : "the host") + "."
+              return "Vulkan can take a few seconds."
+            }
             color: root.muted
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
@@ -955,7 +960,7 @@ Item {
           text: (peers.length === 0
             ? "Host copies a join command. The other machine runs it (same Tailscale tailnet, or the same LAN). Join uses that command from the clipboard if you copied it."
             : peers.length + " game" + (peers.length === 1 ? "" : "s") + " advertising nearby.")
-            + " Up to 8 players. During a match: Super+Shift+Q to change maps, Super+Shift+[ / ] to cycle. Host console (~): changelevel dm2 keeps everyone; map dm2 kicks clients."
+            + " Up to 8 players. When you host: Super+Shift+Q changes maps, Super+Shift+[ / ] cycles them. Host console (~): changelevel dm2 keeps everyone; map dm2 kicks clients."
             + (root.edition === "rerelease"
               ? " 2021 re-release hosts need the same remaster on every machine."
               : " Shareware/classic hosts are joinable with the same original PAKs.")
