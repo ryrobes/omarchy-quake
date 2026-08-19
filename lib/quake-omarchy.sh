@@ -1,5 +1,4 @@
-# Shared library for Quake (omarchy-quake / quake-omarchy).
-# Sourced by bin/quake-omarchy. Safe to source from tests.
+# Shared library for omarchy-quake. Sourced by bin/omarchy-quake.
 
 QO_APP_ID="${QO_APP_ID:-org.omarchy.quake}"
 QO_WINDOW_CLASS="${QO_WINDOW_CLASS:-org.omarchy.quake}"
@@ -63,7 +62,7 @@ qo_atomic_write() {
 }
 
 qo_log() {
-  printf 'quake-omarchy: %s\n' "$*" >&2
+  printf 'omarchy-quake: %s\n' "$*" >&2
 }
 
 qo_die() {
@@ -1404,7 +1403,7 @@ qo_write_session_files() {
   name=$(qo_sanitize_player_name "${QO_CFG_NAME:-$(qo_default_player_name)}")
 
   cat >"$dir/quake.rc" <<'RC'
-// managed by quake-omarchy — skips startdemos so host/join can actually run
+// managed by omarchy-quake — skips startdemos so host/join can actually run
 exec default.cfg
 exec config.cfg
 exec autoexec.cfg
@@ -1527,7 +1526,7 @@ qo_join_command_for() {
   local target
   target=$(qo_join_target_for "${1:-$QO_PORT}")
   [[ -n $target ]] || return 1
-  printf 'quake-omarchy join %s\n' "$target"
+  printf 'omarchy-quake join %s\n' "$target"
 }
 
 qo_clipboard_text() {
@@ -1542,7 +1541,9 @@ qo_join_from_clipboard() {
 import re, sys
 raw = sys.argv[1].strip()
 low = raw.lower()
-if "quake-omarchy join" in low:
+if "omarchy-quake join" in low:
+    raw = raw[low.index("omarchy-quake join") + len("omarchy-quake join"):].strip().split()[0]
+elif "quake-omarchy join" in low:
     raw = raw[low.index("quake-omarchy join") + len("quake-omarchy join"):].strip().split()[0]
 elif re.match(r"^\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?$", raw):
     pass
@@ -1560,6 +1561,10 @@ qo_parse_join() {
   python3 -c 'import sys
 raw = " ".join(sys.argv[1:]).strip()
 for prefix in (
+    "omarchy-quake join ",
+    "omarchy-quake join",
+    "omarchy-quake://join/",
+    "omarchy-quake://",
     "quake-omarchy join ",
     "quake-omarchy join",
     "quake-omarchy://join/",
@@ -1638,14 +1643,14 @@ print(json.dumps({
   "ip": "$ip",
   "dns": "$dns",
   "join": "$target",
-  "command": "quake-omarchy join $target",
+  "command": "omarchy-quake join $target",
   "via": "$via",
   "port": int("$port"),
   "beacon_port": int("$QO_BEACON_PORT"),
   "map": "$map",
   "mode": "$mode",
   "edition": "$edition",
-  "app": "quake-omarchy",
+  "app": "omarchy-quake",
 }))
 PY
 }
@@ -1834,7 +1839,7 @@ qo_ensure_data() {
     fi
     qo_die "shareware download finished but pak0.pak is missing"
   fi
-  qo_die "no $edition data found. Import a Quake folder: quake-omarchy import /path/to/Quake"
+  qo_die "no $edition data found. Import a Quake folder: omarchy-quake import /path/to/Quake"
 }
 
 qo_notify() {

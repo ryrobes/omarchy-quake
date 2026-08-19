@@ -10,7 +10,7 @@ BUILD=$ROOT/build/engine
 VKQUAKE_REPO=${VKQUAKE_REPO:-https://github.com/Novum/vkQuake.git}
 VKQUAKE_REF=${VKQUAKE_REF:-1.35.0}
 
-log() { printf 'quake-omarchy: %s\n' "$*"; }
+log() { printf 'omarchy-quake: %s\n' "$*"; }
 
 need() {
   command -v "$1" >/dev/null || {

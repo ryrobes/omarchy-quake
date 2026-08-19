@@ -11,7 +11,7 @@ mkdir -p "$APPS"
 while IFS= read -r -d '' f; do
   if grep -q 'steam://rungameid/2310' "$f" 2>/dev/null; then
     if ! grep -q '^NoDisplay=true' "$f"; then
-      printf '\n# Hidden by quake-omarchy so Steam Quake is not a duplicate launcher\nNoDisplay=true\nHidden=true\n' >>"$f"
+      printf '\n# Hidden by omarchy-quake so Steam Quake is not a duplicate launcher\nNoDisplay=true\nHidden=true\n' >>"$f"
     fi
   fi
 done < <(find "$APPS" -maxdepth 2 -name '*.desktop' -print0 2>/dev/null)
@@ -20,7 +20,8 @@ done < <(find "$APPS" -maxdepth 2 -name '*.desktop' -print0 2>/dev/null)
 rm -f \
   "$APPS/quake-omarchy.desktop" \
   "$APPS/vkquake.desktop" \
-  "$APPS/org.omarchy.vkquake.desktop"
+  "$APPS/org.omarchy.vkquake.desktop" \
+  "$HOME/.local/bin/quake-omarchy"
 
 # Drop the unofficial Games ▸ Quake rows this repo used to inject. Upstream
 # Omarchy has no Games menu; the packaged app is Install > Gaming, then Apps.

@@ -10,8 +10,8 @@
 
 hl.unbind("SUPER + Q")
 o.bind("SUPER + SHIFT + Q", "Quake", "omarchy-shell shell toggle quake.omarchy")
-o.bind("SUPER + SHIFT + code:35", "Quake next map", "quake-omarchy next-map")
-o.bind("SUPER + SHIFT + code:34", "Quake previous map", "quake-omarchy prev-map")
+o.bind("SUPER + SHIFT + code:35", "Quake next map", "omarchy-quake next-map")
+o.bind("SUPER + SHIFT + code:34", "Quake previous map", "omarchy-quake prev-map")
 
 o.window("org.omarchy.quake", {
   tag = "-default-opacity",

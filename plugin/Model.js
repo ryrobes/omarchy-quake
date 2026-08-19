@@ -69,7 +69,7 @@ function joinCommand(status) {
   if (host.command) return String(host.command)
   var target = host.join || ((host.dns || host.ip || "") + ":" + (host.port || 26000))
   if (!target || target.charAt(0) === ":") return ""
-  return "quake-omarchy join " + target
+  return "omarchy-quake join " + target
 }
 
 function hostLine(status) {

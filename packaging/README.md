@@ -8,17 +8,17 @@ That helper is `sudo pacman -S`, so the package has to live in the `[omarchy]` e
 
 | Path | Role |
 |---|---|
-| `/usr/bin/quake-omarchy` | CLI (`omarchy-quake` is a symlink) |
+| `/usr/bin/omarchy-quake` | CLI |
 | `/usr/lib/omarchy-quake/` | `vkquake` + `lib/*.sh` + Python helpers |
 | `/usr/share/omarchy-quake/plugin/` | Quickshell plugin files (copy, no symlinks) |
-| `/usr/share/applications/org.omarchy.quake.desktop` | Apps launcher (`Exec=quake-omarchy panel`) |
+| `/usr/share/applications/org.omarchy.quake.desktop` | Apps launcher (`Exec=omarchy-quake panel`) |
 | `/usr/share/omarchy-quake/hypr/quake.lua` | Window rules + Super+Shift+Q (for the Omarchy PR or user copy) |
 
 `package()` must not write `$HOME`. Plugin discovery only looks at `~/.config/omarchy/plugins/<id>/`, so the Omarchy installer copies the plugin and enables it after pacman.
 
 ## Build locally
 
-From a tagged checkout (after `v1.5.0` exists):
+From a tagged checkout:
 
 ```bash
 # layout check, no compiler
@@ -28,7 +28,7 @@ make test
 make PREFIX=/usr DESTDIR=/tmp/omarchy-quake-root install
 ```
 
-Or `makepkg -s` from a copy of `packaging/PKGBUILD` next to a release tarball. The first `sha256sums` entry is the GitHub archive for `v1.5.0`; bump it when you cut a new tag.
+Or `makepkg -s` from a copy of `packaging/PKGBUILD` next to a release tarball. The first `sha256sums` entry is `SKIP` until the `v$pkgver` GitHub archive exists; pin it in omarchy-pkgs.
 
 vkQuake 1.35.0 is a second source tarball so the package build does not git-clone during `makepkg`.
 

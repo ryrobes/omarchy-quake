@@ -20,9 +20,8 @@ desktop=$pkg/usr/share/applications/org.omarchy.quake.desktop
 plugin=$pkg/usr/share/omarchy-quake/plugin
 lib=$pkg/usr/lib/omarchy-quake
 
-[[ -x $pkg/usr/bin/quake-omarchy ]]
-[[ -L $pkg/usr/bin/omarchy-quake ]]
-[[ $(readlink "$pkg/usr/bin/omarchy-quake") == quake-omarchy ]]
+[[ -x $pkg/usr/bin/omarchy-quake ]]
+[[ ! -e $pkg/usr/bin/quake-omarchy ]]
 [[ -x $lib/vkquake ]]
 [[ -f $lib/lib/quake-omarchy.sh ]]
 [[ -f $lib/lib/beacon.py ]]
@@ -34,7 +33,7 @@ lib=$pkg/usr/lib/omarchy-quake
 [[ -f $pkg/usr/share/icons/hicolor/scalable/apps/org.omarchy.quake.svg ]]
 [[ -f $desktop ]]
 [[ -f $pkg/usr/share/licenses/omarchy-quake/LICENSE ]]
-grep -qx 'Exec=quake-omarchy panel' "$desktop"
+grep -qx 'Exec=omarchy-quake panel' "$desktop"
 grep -qx 'Icon=org.omarchy.quake' "$desktop"
 grep -qx 'Name=Quake' "$desktop"
 
@@ -55,7 +54,8 @@ mkdir -p "$user"
 HOME=$user PREFIX=$user/.local SKIP_BUILD=1 QO_ENGINE=$fake \
   SKIP_SESSION=1 \
   bash "$ROOT/scripts/install.sh" >/dev/null
-[[ -x $user/.local/bin/quake-omarchy ]]
+[[ -x $user/.local/bin/omarchy-quake ]]
+[[ ! -e $user/.local/bin/quake-omarchy ]]
 [[ -f $user/.config/omarchy/plugins/quake.omarchy/Panel.qml ]]
 [[ -f $user/.local/share/applications/org.omarchy.quake.desktop ]]
 if [[ -f $user/.config/omarchy/extensions/omarchy-menu.jsonc ]] &&

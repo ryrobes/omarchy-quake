@@ -48,7 +48,7 @@ Item {
     return root.edition
   }
   readonly property var mapOptions: root.mapList && root.mapList.length ? root.mapList : Model.mapsFor(root.mapsEdition)
-  readonly property string launcherPath: "quake-omarchy"
+  readonly property string launcherPath: "omarchy-quake"
   readonly property string defaultName: Quickshell.env("USER") || "player"
   readonly property string displayError: (status && status.error) ? String(status.error) : errorText
   readonly property bool hosting: Model.hosting(status) && !root.starting
@@ -985,7 +985,7 @@ Item {
           id: joinField
           width: parent.width
           visible: !root.hosting && !root.starting
-          placeholderText: "quake-omarchy join host:26000"
+          placeholderText: "omarchy-quake join host:26000"
           text: root.joinTarget
           foreground: root.foreground
           onEditingFinished: root.joinTarget = text

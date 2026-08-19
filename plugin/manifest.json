@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "quake.omarchy",
   "name": "Quake",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "author": "omarchy-quake",
   "license": "GPL-2.0-or-later",
   "description": "Quake 1 for Omarchy: shareware fetch, Hyprland/Wayland, and deathmatch.",

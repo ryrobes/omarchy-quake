@@ -61,6 +61,7 @@ linked=$(QO_DATA_DIR=$tmp/data qo_casefold_basedir "$tmp/steam/steamapps/common/
 [[ -L $linked/id1/pak1.pak ]]
 [[ $(qo_classify_basedir "$linked") == classic ]]
 
+[[ $(qo_parse_join 'omarchy-quake join 100.64.1.8:26000') == 100.64.1.8:26000 ]]
 [[ $(qo_parse_join 'quake-omarchy join 100.64.1.8:26000') == 100.64.1.8:26000 ]]
 [[ $(qo_parse_join '100.64.1.8') == 100.64.1.8:26000 ]]
 [[ $(qo_parse_join 'quake://box.tail1234.ts.net:26000') == box.tail1234.ts.net:26000 ]]

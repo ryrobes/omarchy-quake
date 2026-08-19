@@ -3,7 +3,7 @@
 # Source tag is cut on github.com/ryrobes/omarchy-quake.
 
 pkgname=omarchy-quake
-pkgver=1.5.0
+pkgver=1.6.0
 pkgrel=1
 pkgdesc="Quake 1 for Omarchy (vkQuake, shareware fetch, Tailscale deathmatch)"
 arch=('x86_64' 'aarch64')
@@ -33,14 +33,12 @@ optdepends=(
   'vulkan-swrast: software rendering when there is no GPU'
   'omarchy: menu stub, plugin enable, Hyprland session'
 )
-provides=('quake-omarchy')
-conflicts=('quake-omarchy')
 source=(
   "$pkgname-$pkgver.tar.gz::https://github.com/ryrobes/omarchy-quake/archive/refs/tags/v$pkgver.tar.gz"
   "vkQuake-1.35.0.tar.gz::https://github.com/Novum/vkQuake/archive/refs/tags/1.35.0.tar.gz"
 )
 sha256sums=(
-  '325a9c52781f32fb74432c4dafa62f9292e3b60c50010b961a0d43e4cf6ac306'
+  'SKIP'
   '9f3a2bbf7ef22224c26a1a0d574562573fdaae2dc9758a98068617062d49c584'
 )
 

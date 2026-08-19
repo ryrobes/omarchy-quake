@@ -22,7 +22,7 @@ Item {
 
   readonly property string pluginDir: (manifest && manifest.__sourceDir) || (home + "/.config/omarchy/plugins/quake.omarchy")
 
-  readonly property string launcherPath: "quake-omarchy"
+  readonly property string launcherPath: "omarchy-quake"
 
   function run() {
     var args = [root.launcherPath]
@@ -43,7 +43,7 @@ Item {
   }
 
   IpcHandler {
-    target: "quake-omarchy"
+    target: "omarchy-quake"
 
     function status(): string {
       return JSON.stringify(root.status)

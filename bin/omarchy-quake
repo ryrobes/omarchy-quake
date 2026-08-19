@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# quake-omarchy — Quake launcher for Omarchy 4 / Hyprland.
+# omarchy-quake — Quake launcher for Omarchy 4 / Hyprland.
 set -euo pipefail
 
 resolve_root() {
@@ -48,26 +48,26 @@ usage() {
 Quake — native Quake 1 for Omarchy 4
 
 Usage:
-  quake-omarchy                 Play (fetches shareware on first run)
-  quake-omarchy play [opts]
-  quake-omarchy host [opts]     Listen-server; copies a join command
-  quake-omarchy join [host]     Clipboard, LAN/Tailscale scan, or host:port
-  quake-omarchy share           Copy the current join command again
-  quake-omarchy fetch           Download official shareware PAK
-  quake-omarchy import <dir>    Use an existing classic / rerelease folder
-  quake-omarchy editions        List discovered PAK roots as JSON
-  quake-omarchy source          Which edition would launch, and from where
-  quake-omarchy peers           Scan LAN/Tailscale for hosted games
-  quake-omarchy maps            Maps in the current PAK set (JSON)
-  quake-omarchy status          Runtime status JSON
-  quake-omarchy host-status     Live match JSON (rcon status on localhost)
-  quake-omarchy rcon <cmd>      Host admin: status | changelevel | say | kick
-  quake-omarchy changelevel <m> Same as: rcon changelevel <map>
-  quake-omarchy next-map        Host: changelevel to the next PAK map
-  quake-omarchy prev-map        Host: changelevel to the previous PAK map
-  quake-omarchy panel           Open the Omarchy shell panel
-  quake-omarchy stop            Quit a running game
-  quake-omarchy config <k> <v>  Set edition|renderer|basedir|windowed|map|port
+  omarchy-quake                 Play (fetches shareware on first run)
+  omarchy-quake play [opts]
+  omarchy-quake host [opts]     Listen-server; copies a join command
+  omarchy-quake join [host]     Clipboard, LAN/Tailscale scan, or host:port
+  omarchy-quake share           Copy the current join command again
+  omarchy-quake fetch           Download official shareware PAK
+  omarchy-quake import <dir>    Use an existing classic / rerelease folder
+  omarchy-quake editions        List discovered PAK roots as JSON
+  omarchy-quake source          Which edition would launch, and from where
+  omarchy-quake peers           Scan LAN/Tailscale for hosted games
+  omarchy-quake maps            Maps in the current PAK set (JSON)
+  omarchy-quake status          Runtime status JSON
+  omarchy-quake host-status     Live match JSON (rcon status on localhost)
+  omarchy-quake rcon <cmd>      Host admin: status | changelevel | say | kick
+  omarchy-quake changelevel <m> Same as: rcon changelevel <map>
+  omarchy-quake next-map        Host: changelevel to the next PAK map
+  omarchy-quake prev-map        Host: changelevel to the previous PAK map
+  omarchy-quake panel           Open the Omarchy shell panel
+  omarchy-quake stop            Quit a running game
+  omarchy-quake config <k> <v>  Set edition|renderer|basedir|windowed|map|port
                                 name|shirt|pants
 
 Play/host options:
@@ -135,11 +135,11 @@ main() {
     status) qo_status_print ;;
     host-status|match) qo_host_status ;;
     rcon)
-      [[ $# -ge 1 ]] || qo_die "usage: quake-omarchy rcon <status|changelevel|say|kick|...>"
+      [[ $# -ge 1 ]] || qo_die "usage: omarchy-quake rcon <status|changelevel|say|kick|...>"
       qo_rcon_safe "$@"
       ;;
     changelevel)
-      [[ $# -eq 1 ]] || qo_die "usage: quake-omarchy changelevel <map>"
+      [[ $# -eq 1 ]] || qo_die "usage: omarchy-quake changelevel <map>"
       qo_rcon_safe changelevel "$1"
       ;;
     next-map|map-next) qo_changelevel_delta 1 ;;
@@ -149,7 +149,7 @@ main() {
     stop|kill|quit) qo_stop ;;
     focus) qo_focus ;;
     config)
-      [[ $# -eq 2 ]] || qo_die "usage: quake-omarchy config <key> <value>"
+      [[ $# -eq 2 ]] || qo_die "usage: omarchy-quake config <key> <value>"
       qo_config_set "$1" "$2"
       ;;
     *)

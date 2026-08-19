@@ -10,6 +10,7 @@ set -euo pipefail
 
 echo "Installing Quake..."
 omarchy-pkg-add omarchy-quake
+rm -f "$HOME/.local/bin/quake-omarchy" "$HOME/.local/bin/omarchy-quake"
 
 plugin_src=/usr/share/omarchy-quake/plugin
 plugin_dest="$HOME/.config/omarchy/plugins/quake.omarchy"

@@ -59,8 +59,8 @@ log "installing to ${DESTDIR:+$DESTDIR}$PREFIX"
 mkdir -p "$BINDIR" "$LIBDIR/lib" "$SHAREDIR/plugin" "$SHAREDIR/hypr" \
   "$APPDIR" "$ICONDIR/scalable/apps" "$FONTDIR"
 
-install -m 0755 "$ROOT/bin/quake-omarchy" "$BINDIR/quake-omarchy"
-ln -sfn quake-omarchy "$BINDIR/omarchy-quake"
+install -m 0755 "$ROOT/bin/omarchy-quake" "$BINDIR/omarchy-quake"
+rm -f "$BINDIR/quake-omarchy"
 install -m 0644 "$ROOT/lib/quake-omarchy.sh" "$LIBDIR/lib/quake-omarchy.sh"
 install -m 0755 "$ROOT/lib/beacon.py" "$LIBDIR/lib/beacon.py"
 install -m 0755 "$ROOT/lib/nqctl.py" "$LIBDIR/lib/nqctl.py"
@@ -163,7 +163,7 @@ PY
   fi
 fi
 
-log "installed. Play with: quake-omarchy"
+log "installed. Play with: omarchy-quake"
 if (( user_integration )); then
   log "or Super+Space and type Quake. First run downloads shareware (~18MB)."
 else

@@ -99,7 +99,7 @@ def ping_many(hosts: list[str], port: int, timeout: float, exclude: list[str] | 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="quake-omarchy-beacon")
+    parser = argparse.ArgumentParser(prog="omarchy-quake-beacon")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     serve_p = sub.add_parser("serve")
