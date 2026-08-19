@@ -1,4 +1,5 @@
 PREFIX ?= $(HOME)/.local
+DESTDIR ?=
 
 .PHONY: engine plugin-validate test install
 
@@ -10,7 +11,8 @@ plugin-validate:
 
 test:
 	bash tests/test-classify.sh
+	bash tests/test-install-layout.sh
 	python3 lib/beacon.py ping 127.0.0.1 >/dev/null || true
 
 install: engine
-	bash scripts/install.sh
+	PREFIX="$(PREFIX)" DESTDIR="$(DESTDIR)" SKIP_BUILD=1 bash scripts/install.sh

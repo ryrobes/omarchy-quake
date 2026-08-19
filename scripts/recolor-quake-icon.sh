@@ -8,7 +8,9 @@ SRC=${QUAKE_LOGO_SVG:-}
 if [[ -z $SRC ]]; then
   for candidate in \
     "$HOME/.local/share/quake-omarchy/quake-logo.svg" \
-    "$HOME/.config/omarchy/plugins/quake.omarchy/quake-logo.svg"
+    "$HOME/.config/omarchy/plugins/quake.omarchy/quake-logo.svg" \
+    /usr/share/omarchy-quake/quake-logo.svg \
+    /usr/local/share/omarchy-quake/quake-logo.svg
   do
     [[ -f $candidate ]] && SRC=$candidate && break
   done

@@ -22,7 +22,8 @@ rm -f \
   "$APPS/vkquake.desktop" \
   "$APPS/org.omarchy.vkquake.desktop"
 
-# Drop the old "Quake setup" menu row
+# Drop the unofficial Games ▸ Quake rows this repo used to inject. Upstream
+# Omarchy has no Games menu; the packaged app is Install > Gaming, then Apps.
 MENU=$HOME/.config/omarchy/extensions/omarchy-menu.jsonc
 if [[ -f $MENU ]]; then
   python3 - "$MENU" <<'PY'
@@ -40,15 +41,21 @@ if not isinstance(data, dict):
     raise SystemExit(0)
 changed = False
 for key in list(data):
-    if key in ("games.quake-setup", "games.quake-play"):
+    if key.startswith("games.quake"):
         data.pop(key, None)
         changed = True
+        continue
     entry = data.get(key)
     if isinstance(entry, dict) and str(entry.get("label") or "") == "Quake Quattro":
         entry["label"] = "Quake"
         changed = True
     if isinstance(entry, dict) and "Quake Quattro" in str(entry.get("description") or ""):
         entry["description"] = "Play, host, or join"
+        changed = True
+if "games" in data:
+    leftover = [k for k in data if k.startswith("games.")]
+    if not leftover:
+        data.pop("games", None)
         changed = True
 if changed:
     path.write_text("// Extend the Quickshell Omarchy menu with JSONC.\n"

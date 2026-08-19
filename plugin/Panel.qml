@@ -48,7 +48,7 @@ Item {
     return root.edition
   }
   readonly property var mapOptions: root.mapList && root.mapList.length ? root.mapList : Model.mapsFor(root.mapsEdition)
-  readonly property string launcherPath: home + "/.local/bin/quake-omarchy"
+  readonly property string launcherPath: "quake-omarchy"
   readonly property string defaultName: Quickshell.env("USER") || "player"
   readonly property string displayError: (status && status.error) ? String(status.error) : errorText
   readonly property bool hosting: Model.hosting(status) && !root.starting

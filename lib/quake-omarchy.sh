@@ -1,4 +1,4 @@
-# Shared library for Quake (quake-omarchy).
+# Shared library for Quake (omarchy-quake / quake-omarchy).
 # Sourced by bin/quake-omarchy. Safe to source from tests.
 
 QO_APP_ID="${QO_APP_ID:-org.omarchy.quake}"
@@ -1093,7 +1093,11 @@ qo_find_engine() {
     "${QO_ENGINE:-}" \
     "${QO_ROOT:-}/vkquake" \
     "${QO_ROOT:-}/build/engine/vkquake" \
+    "${HOME}/.local/lib/omarchy-quake/vkquake" \
     "${HOME}/.local/lib/quake-omarchy/vkquake" \
+    /usr/lib/omarchy-quake/vkquake \
+    /usr/local/lib/omarchy-quake/vkquake \
+    /usr/lib/quake-omarchy/vkquake \
     /usr/local/lib/quake-omarchy/vkquake
   do
     [[ -n $candidate && -x $candidate ]] && { printf '%s\n' "$candidate"; return 0; }

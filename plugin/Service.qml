@@ -6,7 +6,7 @@ import Quickshell.Io
 //
 // Watches the launcher status file so any QML surface can read live state
 // later (HUD, bar widget, etc.) without talking to the engine directly.
-// Also keeps a .desktop entry installed while the plugin is enabled.
+// The .desktop entry is owned by the package / make install, not rewritten here.
 
 Item {
   id: root
@@ -17,34 +17,17 @@ Item {
 
   readonly property string home: Quickshell.env("HOME")
   readonly property string statusPath: home + "/.local/state/quake-omarchy/status.json"
-  readonly property string desktopDest: home + "/.local/share/applications/org.omarchy.quake.desktop"
-  readonly property string marker: "^X-QuakeOmarchy-Managed=true$"
 
   property var status: ({ version: 1, mode: "idle", running: false })
 
   readonly property string pluginDir: (manifest && manifest.__sourceDir) || (home + "/.config/omarchy/plugins/quake.omarchy")
 
-  readonly property string launcherPath: home + "/.local/bin/quake-omarchy"
+  readonly property string launcherPath: "quake-omarchy"
 
   function run() {
     var args = [root.launcherPath]
     for (var i = 0; i < arguments.length; i++) args.push(String(arguments[i]))
     Quickshell.execDetached(args)
-  }
-
-  onManifestChanged: {
-    var dir = manifest && manifest.__sourceDir
-    if (!dir) return
-    Quickshell.execDetached([
-      "sh", "-c",
-      'icon="$HOME/.local/share/icons/hicolor/scalable/apps/org.omarchy.quake.svg"; [ -f "$icon" ] || icon="$4/quake-logo.svg"; mkdir -p "${2%/*}"; printf "%s\n" "[Desktop Entry]" "Type=Application" "Version=1.0" "Name=Quake" "GenericName=Quake" "Comment=Quake 1 for Omarchy" "Exec=$5 panel" "Icon=$icon" "Terminal=false" "Categories=Game;" "StartupNotify=true" "StartupWMClass=org.omarchy.quake" "X-QuakeOmarchy-Managed=true" > "$2"',
-      "sh",
-      dir + "/org.omarchy.quake.desktop",
-      desktopDest,
-      marker,
-      dir,
-      home + "/.local/bin/quake-omarchy"
-    ])
   }
 
   FileView {

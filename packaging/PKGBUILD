@@ -1,0 +1,60 @@
+# Maintainer: Ryan Robitaille <ryan.robitaille@gmail.com>
+# Draft for omacom-io/omarchy-pkgs (pkgbuilds/omarchy-quake).
+# Source tag is cut on github.com/ryrobes/omarchy-quake.
+
+pkgname=omarchy-quake
+pkgver=1.5.0
+pkgrel=1
+pkgdesc="Quake 1 for Omarchy (vkQuake, shareware fetch, Tailscale deathmatch)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/ryrobes/omarchy-quake"
+license=('MIT' 'GPL2')
+depends=(
+  sdl3
+  vulkan-icd-loader
+  mpg123
+  libvorbis
+  flac
+  opus
+  libogg
+  python
+  p7zip
+)
+makedepends=(
+  meson
+  ninja
+  git
+  pkgconf
+  vulkan-headers
+  glslang
+  spirv-tools
+)
+optdepends=(
+  'vulkan-swrast: software rendering when there is no GPU'
+  'omarchy: menu stub, plugin enable, Hyprland session'
+)
+provides=('quake-omarchy')
+conflicts=('quake-omarchy')
+source=(
+  "$pkgname-$pkgver.tar.gz::https://github.com/ryrobes/omarchy-quake/archive/refs/tags/v$pkgver.tar.gz"
+  "vkQuake-1.35.0.tar.gz::https://github.com/Novum/vkQuake/archive/refs/tags/1.35.0.tar.gz"
+)
+sha256sums=(
+  'SKIP'
+  '9f3a2bbf7ef22224c26a1a0d574562573fdaae2dc9758a98068617062d49c584'
+)
+
+prepare() {
+  rm -rf "$srcdir/$pkgname-$pkgver/vendor/vkQuake"
+  cp -a "$srcdir/vkQuake-1.35.0" "$srcdir/$pkgname-$pkgver/vendor/vkQuake"
+}
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  bash scripts/build-engine.sh
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  DESTDIR="$pkgdir" PREFIX=/usr SKIP_BUILD=1 bash scripts/install.sh
+}

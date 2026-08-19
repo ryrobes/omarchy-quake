@@ -3,10 +3,16 @@
 set -euo pipefail
 
 resolve_root() {
-  if [[ -n ${QUAKE_OMARCHY_ROOT:-} && -d ${QUAKE_OMARCHY_ROOT} ]]; then
-    printf '%s\n' "$QUAKE_OMARCHY_ROOT"
-    return
-  fi
+  local candidate
+  for candidate in \
+    "${OMARCHY_QUAKE_ROOT:-}" \
+    "${QUAKE_OMARCHY_ROOT:-}"
+  do
+    if [[ -n $candidate && -f $candidate/lib/quake-omarchy.sh ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
   local self dir
   self=$(readlink -f "$0")
   dir=$(dirname "$self")
@@ -14,14 +20,19 @@ resolve_root() {
     (cd "$dir/.." && pwd)
     return
   fi
-  if [[ -f ${HOME}/.local/lib/quake-omarchy/lib/quake-omarchy.sh ]]; then
-    printf '%s\n' "${HOME}/.local/lib/quake-omarchy"
-    return
-  fi
-  if [[ -f /usr/local/lib/quake-omarchy/lib/quake-omarchy.sh ]]; then
-    printf '%s\n' /usr/local/lib/quake-omarchy
-    return
-  fi
+  for candidate in \
+    "${HOME}/.local/lib/omarchy-quake" \
+    "${HOME}/.local/lib/quake-omarchy" \
+    /usr/lib/omarchy-quake \
+    /usr/local/lib/omarchy-quake \
+    /usr/lib/quake-omarchy \
+    /usr/local/lib/quake-omarchy
+  do
+    if [[ -f $candidate/lib/quake-omarchy.sh ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
   printf '%s\n' "$dir/.."
 }
 
