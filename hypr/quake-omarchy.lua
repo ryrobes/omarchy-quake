@@ -8,7 +8,6 @@
 -- the mouse grab. During a hosted match it is the map/score overlay;
 -- otherwise it is the launcher. Super+Shift+[ / ] cycle maps with no UI.
 
-hl.unbind("SUPER + Q")
 o.bind("SUPER + SHIFT + Q", "Quake", "omarchy-shell shell toggle quake.omarchy")
 o.bind("SUPER + SHIFT + code:35", "Quake next map", "omarchy-quake next-map")
 o.bind("SUPER + SHIFT + code:34", "Quake previous map", "omarchy-quake prev-map")

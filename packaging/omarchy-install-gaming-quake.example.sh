@@ -29,7 +29,20 @@ if command -v omarchy-plugin-validate >/dev/null; then
   omarchy-plugin-validate "$plugin_dest"
 fi
 
-omarchy-plugin-enable quake.omarchy
+# The shell notices the new plugin dir via inotify and rescans asynchronously,
+# so an immediate enable can race it ("plugin is not known"). Rescan, then retry.
+omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+enabled=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if omarchy-plugin-enable quake.omarchy >/dev/null 2>&1; then
+    enabled=1
+    break
+  fi
+  sleep 0.3
+done
+if (( ! enabled )); then
+  omarchy-plugin-enable quake.omarchy
+fi
 
 hypr_src=/usr/share/omarchy-quake/hypr/quake.lua
 hypr_dest="$HOME/.config/hypr/apps/quake-omarchy.lua"

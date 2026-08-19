@@ -53,11 +53,10 @@ LIBDIR=$DESTDIR$PREFIX/lib/$PKG_LIB
 SHAREDIR=$DESTDIR$PREFIX/share/$PKG_LIB
 APPDIR=$DESTDIR$PREFIX/share/applications
 ICONDIR=$DESTDIR$PREFIX/share/icons/hicolor
-FONTDIR=$DESTDIR$PREFIX/share/fonts/$PKG_LIB
 
 log "installing to ${DESTDIR:+$DESTDIR}$PREFIX"
 mkdir -p "$BINDIR" "$LIBDIR/lib" "$SHAREDIR/plugin" "$SHAREDIR/hypr" \
-  "$APPDIR" "$ICONDIR/scalable/apps" "$FONTDIR"
+  "$APPDIR" "$ICONDIR/scalable/apps"
 
 install -m 0755 "$ROOT/bin/omarchy-quake" "$BINDIR/omarchy-quake"
 rm -f "$BINDIR/quake-omarchy"
@@ -69,9 +68,6 @@ install -m 0644 "$ROOT/hypr/quake-omarchy.lua" "$SHAREDIR/hypr/quake.lua"
 install -m 0644 "$ROOT/plugin/quake-logo.svg" "$SHAREDIR/quake-logo.svg"
 install -m 0644 "$ROOT/share/org.omarchy.quake.svg" \
   "$ICONDIR/scalable/apps/org.omarchy.quake.svg"
-if [[ -f $ROOT/share/QuakeQuattro.otf ]]; then
-  install -m 0644 "$ROOT/share/QuakeQuattro.otf" "$FONTDIR/QuakeQuattro.otf"
-fi
 
 # Plugin files only (no nested symlinks — omarchy-plugin-validate forbids them).
 find "$SHAREDIR/plugin" -mindepth 1 -delete
@@ -89,10 +85,9 @@ if (( user_integration )); then
   PLUGIN_DEST=${PLUGIN_DEST:-$HOME/.config/omarchy/plugins/$PLUGIN_ID}
   DESKTOP_DIR=${XDG_DATA_HOME:-$HOME/.local/share}/applications
   ICON_BASE=${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor
-  FONT_USER=${XDG_DATA_HOME:-$HOME/.local/share}/fonts
   mkdir -p "$PLUGIN_DEST" "$DESKTOP_DIR" \
     "$ICON_BASE/scalable/apps" "$ICON_BASE/128x128/apps" \
-    "$FONT_USER" "$HOME/.local/share/quake-omarchy"
+    "$HOME/.local/share/quake-omarchy"
 
   find "$PLUGIN_DEST" -maxdepth 1 -type f -name '*.qml' -delete
   cp -f "$ROOT/plugin/"* "$PLUGIN_DEST/"
@@ -101,10 +96,8 @@ if (( user_integration )); then
     omarchy-plugin-validate "$PLUGIN_DEST"
   fi
 
-  if [[ -f $ROOT/share/QuakeQuattro.otf ]]; then
-    install -m 0644 "$ROOT/share/QuakeQuattro.otf" "$FONT_USER/QuakeQuattro.otf"
-    fc-cache -f "$FONT_USER" >/dev/null 2>&1 || true
-  fi
+  # Older installs shipped a placeholder font; drop it.
+  rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/fonts/QuakeQuattro.otf"
   install -m 0644 "$ROOT/plugin/quake-logo.svg" \
     "$HOME/.local/share/quake-omarchy/quake-logo.svg"
   QUAKE_LOGO_SVG=$HOME/.local/share/quake-omarchy/quake-logo.svg \

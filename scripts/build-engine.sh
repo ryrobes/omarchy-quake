@@ -15,12 +15,13 @@ log() { printf 'omarchy-quake: %s\n' "$*"; }
 need() {
   command -v "$1" >/dev/null || {
     echo "missing dependency: $1" >&2
-    echo "On Omarchy: omarchy pkg add base-devel git meson ninja pkgconf sdl3 vulkan-headers vulkan-icd-loader glslang spirv-tools mpg123 libvorbis flac opus libogg p7zip" >&2
+    echo "On Omarchy: omarchy pkg add base-devel git meson ninja pkgconf sdl3 vulkan-headers vulkan-icd-loader glslang spirv-tools mpg123 libvorbis flac opus libogg" >&2
     exit 1
   }
 }
 
 need git
+need patch
 need meson
 need ninja
 
@@ -39,22 +40,38 @@ fi
   exit 1
 }
 
-# Tiny deltas on stock vkQuake (Wayland quit idle, window title). Re-clone
-# of vendor/vkQuake drops in-tree edits, so re-apply from patches/vkquake.
+# Tiny deltas on stock vkQuake (Wayland quit idle, window title, rcon).
+# Re-clone of vendor/vkQuake drops in-tree edits, so re-apply from
+# patches/vkquake. Use patch(1), not `git apply`: inside any other git work
+# tree (a PKGBUILD src/ under a checkout, build/ here) git apply resolves the
+# patch paths against that repo and *skips* them with exit 0.
 apply_engine_patches() {
   local patchdir=$ROOT/patches/vkquake
   local p
   [[ -d $patchdir ]] || return 0
   for p in "$patchdir"/*.patch; do
     [[ -f $p ]] || continue
-    if (cd "$SRC" && git apply --check "$p") >/dev/null 2>&1; then
+    if patch -Np1 -s -d "$SRC" --dry-run -i "$p" >/dev/null 2>&1; then
       log "applying $(basename "$p")"
-      (cd "$SRC" && git apply "$p")
-    elif (cd "$SRC" && git apply --reverse --check "$p") >/dev/null 2>&1; then
+      patch -Np1 -s -d "$SRC" -i "$p"
+    elif patch -Np1 -R -s -d "$SRC" --dry-run -i "$p" >/dev/null 2>&1; then
       log "already applied $(basename "$p")"
     else
       echo "failed to apply $(basename "$p") onto $SRC" >&2
-      (cd "$SRC" && git apply --check "$p") || true
+      patch -Np1 -d "$SRC" --dry-run -i "$p" || true
+      exit 1
+    fi
+  done
+  # Fail loudly if the patches did not land (each sentinel is one patch).
+  local sentinel
+  for sentinel in \
+    'Quake/gl_vidsdl.c:GL_DestroyRenderResources ();' \
+    'Quake/net_dgrm.c:Cvar_RegisterVariable (&rcon_password);' \
+    'Quake/net_dgrm.c:Datagram_Rcon_Flush ("queued");' \
+    'Quake/net_loop.c:peer->disconnected'
+  do
+    if ! grep -qF -- "${sentinel#*:}" "$SRC/${sentinel%%:*}"; then
+      echo "engine patch sentinel missing: $sentinel" >&2
       exit 1
     fi
   done

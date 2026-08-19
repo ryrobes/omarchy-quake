@@ -37,7 +37,7 @@ Item {
 
   readonly property string home: Quickshell.env("HOME")
   readonly property string pluginDir: (manifest && manifest.__sourceDir) || (home + "/.config/omarchy/plugins/quake.omarchy")
-  readonly property string statusPath: home + "/.local/state/quake-omarchy/status.json"
+  readonly property string statusPath: (Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")) + "/quake-omarchy/status.json"
   readonly property string iconPath: pluginDir + "/icon.svg"
   property var status: ({ version: 1, mode: "idle", running: false })
   readonly property string joinCommand: Model.joinCommand(status)
@@ -335,7 +335,7 @@ Item {
 
   FileView {
     id: configFile
-    path: home + "/.config/quake-omarchy/config"
+    path: (Quickshell.env("XDG_CONFIG_HOME") || (home + "/.config")) + "/quake-omarchy/config"
     watchChanges: true
     printErrors: false
     onLoaded: root.applyConfigText(text())

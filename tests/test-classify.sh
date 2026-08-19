@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export QO_QUIET=1
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck disable=SC1091
 source "$ROOT/lib/quake-omarchy.sh"
@@ -66,6 +67,10 @@ linked=$(QO_DATA_DIR=$tmp/data qo_casefold_basedir "$tmp/steam/steamapps/common/
 [[ $(qo_parse_join '100.64.1.8') == 100.64.1.8:26000 ]]
 [[ $(qo_parse_join 'quake://box.tail1234.ts.net:26000') == box.tail1234.ts.net:26000 ]]
 [[ $(qo_parse_join 'box') == box:26000 ]]
+if qo_parse_join 'omarchy-quake join "e1m1;quit":26000' >/dev/null; then
+  echo "qo_parse_join should reject shell/console metacharacters" >&2
+  exit 1
+fi
 
 python3 - "$ROOT/lib/beacon.py" <<'PY'
 import importlib.util, sys, socket, threading, time

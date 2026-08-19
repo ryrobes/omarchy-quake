@@ -8,7 +8,8 @@ pkgrel=1
 pkgdesc="Quake 1 for Omarchy (vkQuake, shareware fetch, Tailscale deathmatch)"
 arch=('x86_64' 'aarch64')
 url="https://github.com/ryrobes/omarchy-quake"
-license=('MIT' 'GPL2')
+license=('MIT' 'GPL-2.0-or-later')
+options=('!debug')
 depends=(
   sdl3
   vulkan-icd-loader
@@ -18,12 +19,15 @@ depends=(
   opus
   libogg
   python
-  p7zip
+  libarchive
+  wl-clipboard
+  hicolor-icon-theme
 )
 makedepends=(
   meson
   ninja
   git
+  patch
   pkgconf
   vulkan-headers
   glslang
@@ -32,6 +36,8 @@ makedepends=(
 optdepends=(
   'vulkan-swrast: software rendering when there is no GPU'
   'omarchy: menu stub, plugin enable, Hyprland session'
+  'tailscale: deathmatch over a tailnet'
+  '7zip: faster shareware extraction (bsdtar is the fallback)'
 )
 source=(
   "$pkgname-$pkgver.tar.gz::https://github.com/ryrobes/omarchy-quake/archive/refs/tags/v$pkgver.tar.gz"

@@ -4,7 +4,7 @@
   "name": "Quake",
   "version": "1.6.0",
   "author": "omarchy-quake",
-  "license": "GPL-2.0-or-later",
+  "license": "MIT",
   "description": "Quake 1 for Omarchy: shareware fetch, Hyprland/Wayland, and deathmatch.",
   "kinds": [
     "panel",

@@ -44,7 +44,12 @@ def _parse_pong(data: bytes, src_ip: str) -> dict | None:
         return None
     if not isinstance(payload, dict):
         return None
-    payload.setdefault("ip", src_ip)
+    # A host that could not work out its own address advertises "" — use the
+    # address the reply actually came from.
+    if not payload.get("ip"):
+        payload["ip"] = src_ip
+    if not payload.get("join"):
+        payload["join"] = "%s:%s" % (payload["ip"], payload.get("port") or 26000)
     return payload
 
 

@@ -16,7 +16,7 @@ Item {
   property string omarchyPath: ""
 
   readonly property string home: Quickshell.env("HOME")
-  readonly property string statusPath: home + "/.local/state/quake-omarchy/status.json"
+  readonly property string statusPath: (Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")) + "/quake-omarchy/status.json"
 
   property var status: ({ version: 1, mode: "idle", running: false })
 

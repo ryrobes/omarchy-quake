@@ -26,8 +26,7 @@ The in-game tilde console stays in the game. Omarchy's Super+` pulldown owns the
 omarchy pkg add \
   base-devel git meson ninja pkgconf \
   sdl3 vulkan-headers vulkan-icd-loader glslang spirv-tools \
-  mpg123 libvorbis flac opus libogg \
-  p7zip
+  mpg123 libvorbis flac opus libogg
 
 make install
 ```

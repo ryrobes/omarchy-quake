@@ -1024,7 +1024,7 @@ qo_hardware_icds() {
 
 qo_software_icd() {
   local candidate
-  for candidate in /usr/share/vulkan/icd.d/lvp_icd.x86_64.json /usr/share/vulkan/icd.d/lvp_icd.json; do
+  for candidate in /usr/share/vulkan/icd.d/lvp_icd."$(uname -m)".json /usr/share/vulkan/icd.d/lvp_icd.json /usr/share/vulkan/icd.d/lvp_icd.*.json; do
     [[ -f $candidate ]] && { printf '%s\n' "$candidate"; return 0; }
   done
   return 1
@@ -1368,11 +1368,30 @@ for peer in (d.get("Peer") or {}).values():
 '
 }
 
+# IPv4 addresses of this machine, excluding loopback. `hostname -I` is not
+# portable (Arch/Omarchy ship inetutils, which has no -I), so ask iproute2
+# and fall back to `hostname -i`.
+# `qo_lan_ips` skips virtual bridges (docker, libvirt, veth, tailscale);
+# `qo_lan_ips all` returns every address, for excluding ourselves in scans.
+qo_lan_ips() {
+  local mode=${1:-lan} out=""
+  if qo_cmd ip; then
+    out=$(ip -4 -o addr show scope global 2>/dev/null | awk -v mode="$mode" '
+      {
+        dev = $2; ip = $4; sub(/\/.*/, "", ip)
+        if (mode != "all" && dev ~ /^(docker|br-|virbr|veth|tailscale|lo|cni|flannel|podman)/) next
+        print ip
+      }')
+  fi
+  [[ -n $out ]] || out=$(hostname -i 2>/dev/null | tr ' ' '\n')
+  printf '%s\n' "$out" | awk 'NF && $0 !~ /^127\./'
+}
+
 qo_host_ips() {
   local ts
   ts=$(qo_tailscale_ip || true)
   [[ -n $ts ]] && printf '%s\n' "$ts"
-  hostname -I 2>/dev/null | tr ' ' '\n' | awk 'NF && $0 !~ /^127\./ && $0 !~ /^172\.17\./'
+  qo_lan_ips | awk -v ts="$ts" '$0 != ts'
 }
 
 qo_join_target_for() {
@@ -1553,6 +1572,8 @@ else:
     raise SystemExit(1)
 if ":" not in raw:
     raw = raw + ":26000"
+if not re.match(r"^[A-Za-z0-9._-]+:\d{1,5}$", raw):
+    raise SystemExit(1)
 print(raw)
 ' "$clip"
 }
@@ -1581,6 +1602,9 @@ if not raw:
     raise SystemExit(1)
 if raw.count(":") == 0:
     raw = raw + ":26000"
+import re
+if not re.match(r"^[A-Za-z0-9._-]+:\d{1,5}$", raw):
+    raise SystemExit(1)
 print(raw)
 ' "$@"
 }
@@ -1664,7 +1688,7 @@ qo_self_ips() {
   ip=$(qo_tailscale_ip 2>/dev/null || true)
   [[ -n $ip ]] && printf '%s\n' "$ip"
   printf '%s\n' 127.0.0.1
-  hostname -I 2>/dev/null | tr ' ' '\n' | awk 'NF && $0 !~ /^127\./'
+  qo_lan_ips all
 }
 
 qo_beacon_stop() {
@@ -1844,6 +1868,7 @@ qo_ensure_data() {
 
 qo_notify() {
   local title=$1 body=${2:-}
+  [[ -n ${QO_QUIET:-} ]] && return 0
   if qo_cmd omarchy-notification-send; then
     omarchy-notification-send -g "Q" --app-name "Quake" "$title" "$body" || true
   elif qo_cmd notify-send; then
@@ -1853,6 +1878,7 @@ qo_notify() {
 
 qo_osd() {
   local msg=$1
+  [[ -n ${QO_QUIET:-} ]] && return 0
   qo_cmd omarchy-osd && omarchy-osd -m "$msg" -d 2500 >/dev/null 2>&1 || true
 }
 
@@ -1958,7 +1984,7 @@ qo_launch() {
       ;;
     join)
       [[ -n $connect_host ]] || qo_die "join requires host[:port]"
-      connect_host=$(qo_parse_join "$connect_host")
+      connect_host=$(qo_parse_join "$connect_host") || qo_die "bad join address: $connect_host"
       args+=(-port "$port")
       qo_write_session_files join "" "$connect_host"
       ;;

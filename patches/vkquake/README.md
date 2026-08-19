@@ -1,7 +1,7 @@
 Patches on stock vkQuake 1.35. `scripts/build-engine.sh` applies each
 `*.patch` after clone (and skips ones already applied).
 
-`0001-wayland-idle-quit-and-quattro-title.patch`
+`0001-wayland-idle-quit-and-title.patch`
 
 - Wait for the in-flight present / destroy the swapchain before
   `SDL_DestroyWindow`. Without this, NVIDIA's Wayland WSI can SIGSEGV

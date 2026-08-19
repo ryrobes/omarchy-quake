@@ -20,6 +20,12 @@ resolve_root() {
     (cd "$dir/.." && pwd)
     return
   fi
+  # Installed layout: <prefix>/bin/omarchy-quake next to <prefix>/lib/omarchy-quake.
+  # Check this before any $HOME path so /usr/bin never runs a stale ~/.local tree.
+  if [[ -f $dir/../lib/omarchy-quake/lib/quake-omarchy.sh ]]; then
+    (cd "$dir/../lib/omarchy-quake" && pwd)
+    return
+  fi
   for candidate in \
     "${HOME}/.local/lib/omarchy-quake" \
     "${HOME}/.local/lib/quake-omarchy" \

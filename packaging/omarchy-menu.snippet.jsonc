@@ -1,10 +1,10 @@
 // Add to default/omarchy/omarchy-menu.jsonc in basecamp/omarchy.
-// Install rows use disabled: (catalog). Remove rows use when:.
+// Both rows gate on omarchy-pkg-present, like the other Gaming rows.
 
 "install.gaming.quake": {
   "icon": "",
   "label": "Quake",
-  "disabled": "omarchy-pkg-present omarchy-quake",
+  "when": "! omarchy-pkg-present omarchy-quake",
   "action": "omarchy-launch-floating-terminal-with-presentation omarchy-install-gaming-quake"
 },
 "remove.gaming.quake": {

@@ -73,7 +73,7 @@ pkg_add \
   base-devel git meson ninja pkgconf \
   sdl3 vulkan-headers vulkan-icd-loader vulkan-swrast glslang spirv-tools \
   mpg123 libvorbis flac opus libogg \
-  p7zip python
+  python
 
 step "1. unit tests (no vkQuake compile)"
 run make test
@@ -99,9 +99,10 @@ pkgrel=${PKGREL}
 pkgdesc="Quake 1 for Omarchy (vkQuake, shareware fetch, Tailscale deathmatch)"
 arch=('x86_64' 'aarch64')
 url="https://github.com/ryrobes/omarchy-quake"
-license=('MIT' 'GPL2')
-depends=(sdl3 vulkan-icd-loader mpg123 libvorbis flac opus libogg python p7zip)
-makedepends=(meson ninja git pkgconf vulkan-headers glslang spirv-tools)
+license=('MIT' 'GPL-2.0-or-later')
+options=('!debug')
+depends=(sdl3 vulkan-icd-loader mpg123 libvorbis flac opus libogg libarchive wl-clipboard hicolor-icon-theme python)
+makedepends=(meson ninja git patch pkgconf vulkan-headers glslang spirv-tools)
 source=(
   "omarchy-quake-${PKGVER}.tar.gz"
   "vkQuake-1.35.0.tar.gz::https://github.com/Novum/vkQuake/archive/refs/tags/1.35.0.tar.gz"
@@ -169,7 +170,20 @@ run touch "$plugin_dest"/*.qml "$plugin_dest"/*.js "$plugin_dest"/manifest.json
 if command -v omarchy-plugin-validate >/dev/null; then
   run omarchy-plugin-validate "$plugin_dest"
 fi
-run omarchy-plugin-enable quake.omarchy
+# The shell notices the new plugin dir via inotify and rescans asynchronously,
+# so an immediate enable can race it ("plugin is not known"). Rescan, then retry.
+run omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+enabled=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if omarchy-plugin-enable quake.omarchy >/dev/null 2>&1; then
+    enabled=1
+    break
+  fi
+  sleep 0.3
+done
+if (( ! enabled )); then
+  run omarchy-plugin-enable quake.omarchy
+fi
 
 hypr_src=/usr/share/omarchy-quake/hypr/quake.lua
 hypr_dest="$HOME/.config/hypr/apps/quake-omarchy.lua"

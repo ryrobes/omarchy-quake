@@ -71,4 +71,15 @@ Leave it off the `fast` ring until it has been used on edge.
 - `omarchy-remove-gaming-quake.example.sh`
 - `omarchy-menu.snippet.jsonc`
 
+Notes for that PR:
+
+- Stock Omarchy 4 `hyprland.lua` does not load `~/.config/hypr/apps/*.lua`, so
+  the installer copies `quake.lua` there *and* adds
+  `require("hypr.apps.quake-omarchy")` to `~/.config/hypr/hyprland.lua`. If the
+  maintainers would rather not edit that file, the window rules can ship as
+  `default/hypr/apps/quake.lua` (auto-loaded like `steam.lua`) instead.
+- The shell picks up a new plugin dir asynchronously; the installer rescans and
+  retries `omarchy-plugin-enable` instead of calling it once.
+- Menu rows gate on `when: omarchy-pkg-present`, like the other Gaming rows.
+
 Do not merge that PR until `pacman -S omarchy-quake` works on a stock Omarchy box.
