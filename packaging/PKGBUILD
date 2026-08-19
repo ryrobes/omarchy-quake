@@ -40,7 +40,7 @@ source=(
   "vkQuake-1.35.0.tar.gz::https://github.com/Novum/vkQuake/archive/refs/tags/1.35.0.tar.gz"
 )
 sha256sums=(
-  'SKIP'
+  '325a9c52781f32fb74432c4dafa62f9292e3b60c50010b961a0d43e4cf6ac306'
   '9f3a2bbf7ef22224c26a1a0d574562573fdaae2dc9758a98068617062d49c584'
 )
 

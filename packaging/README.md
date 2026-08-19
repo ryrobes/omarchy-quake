@@ -28,7 +28,7 @@ make test
 make PREFIX=/usr DESTDIR=/tmp/omarchy-quake-root install
 ```
 
-Or `makepkg -s` from a copy of `packaging/PKGBUILD` next to a release tarball. Fill the first `sha256sums` entry after the GitHub archive for `v$pkgver` exists (`SKIP` is a placeholder).
+Or `makepkg -s` from a copy of `packaging/PKGBUILD` next to a release tarball. The first `sha256sums` entry is the GitHub archive for `v1.5.0`; bump it when you cut a new tag.
 
 vkQuake 1.35.0 is a second source tarball so the package build does not git-clone during `makepkg`.
 
