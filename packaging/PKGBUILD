@@ -3,7 +3,7 @@
 # Source tag is cut on github.com/ryrobes/omarchy-quake.
 
 pkgname=omarchy-quake
-pkgver=1.6.0
+pkgver=1.6.1
 pkgrel=1
 pkgdesc="Quake 1 for Omarchy (vkQuake, shareware fetch, Tailscale deathmatch)"
 arch=('x86_64' 'aarch64')
