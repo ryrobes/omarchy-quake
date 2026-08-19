@@ -37,6 +37,24 @@ if [[ -f $hypr_src ]]; then
   mkdir -p "$(dirname "$hypr_dest")"
   install -m 0644 "$hypr_src" "$hypr_dest"
 fi
+HYPR_LUA=$HOME/.config/hypr/hyprland.lua
+if [[ -f $HYPR_LUA ]] && ! grep -q 'hypr.apps.quake-omarchy' "$HYPR_LUA"; then
+  cp "$HYPR_LUA" "$HYPR_LUA.bak.$(date +%s)"
+  python3 - "$HYPR_LUA" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+line = 'require("hypr.apps.quake-omarchy")\n'
+if "hypr.apps.quake-omarchy" in text:
+    raise SystemExit(0)
+for needle in ('require("hypr.apps.synchro")\n', 'require("hypr.autostart")\n'):
+    if needle in text:
+        path.write_text(text.replace(needle, needle + line, 1))
+        raise SystemExit(0)
+path.write_text(text + "\n" + line)
+PY
+fi
 
 if command -v omarchy >/dev/null; then
   omarchy restart shell >/dev/null 2>&1 || true

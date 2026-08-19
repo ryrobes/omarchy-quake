@@ -16,6 +16,20 @@ That helper is `sudo pacman -S`, so the package has to live in the `[omarchy]` e
 
 `package()` must not write `$HOME`. Plugin discovery only looks at `~/.config/omarchy/plugins/<id>/`, so the Omarchy installer copies the plugin and enables it after pacman.
 
+## Test on a fresh Omarchy 4 VM
+
+A QEMU VM with a stock Omarchy 4 ISO is the right rehearsal: extra is empty, so you prove `makepkg` + `pacman -U` + the installer commands, then play.
+
+Log into the **graphical** session (plugin enable needs `omarchy-shell`), then:
+
+```bash
+git clone https://github.com/ryrobes/omarchy-quake.git
+cd omarchy-quake
+./scripts/test-packaged-install.sh
+```
+
+That script prints every command before it runs: unit tests, DESTDIR layout, `makepkg` of *this* checkout, `pacman -U` (stand-in for `omarchy-pkg-add omarchy-quake`), copy/enable the plugin, then `gtk-launch org.omarchy.quake`. Pass `--no-launch` to stop before the panel. VMs without a GPU get `vulkan-swrast`. First Play downloads shareware (~18MB).
+
 ## Build locally
 
 From a tagged checkout:
