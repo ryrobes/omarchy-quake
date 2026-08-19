@@ -1,0 +1,41 @@
+diff --git a/Quake/gl_vidsdl.c b/Quake/gl_vidsdl.c
+index 18de6f3..1c8cd7c 100644
+--- a/Quake/gl_vidsdl.c
++++ b/Quake/gl_vidsdl.c
+@@ -514,7 +514,7 @@ static qboolean VID_SetMode (int width, int height, float refreshrate, qboolean
+ 	CDAudio_Pause ();
+ 	BGM_Pause ();
+ 
+-	q_snprintf (caption, sizeof (caption), ENGINE_NAME_AND_VER);
++	q_snprintf (caption, sizeof (caption), "Quake");
+ 
+ 	/* Create the window if needed, hidden */
+ 	if (!draw_context)
+@@ -4216,6 +4216,15 @@ void VID_Shutdown (void)
+ 	if (vid_initialized)
+ 	{
+ 		assert (draw_context != NULL);
++		// Join the in-flight present and destroy the swapchain before the
++		// Wayland surface. NVIDIA WSI SIGSEGVs in wl_proxy_marshal_flags if
++		// GL_EndRenderingTask is still presenting when the window dies.
++		if (vulkan_globals.device != VK_NULL_HANDLE)
++		{
++			GL_WaitForDeviceIdle ();
++			if (render_resources_created)
++				GL_DestroyRenderResources ();
++		}
+ 		SDL_DestroyWindow (draw_context);
+ 		draw_context = NULL;
+ 		SDL_QuitSubSystem (SDL_INIT_VIDEO);
+diff --git a/Quake/main_sdl.c b/Quake/main_sdl.c
+index 6e1ea44..c8acc99 100644
+--- a/Quake/main_sdl.c
++++ b/Quake/main_sdl.c
+@@ -52,6 +52,7 @@ static void Sys_InitSDL (void)
+ 	Sys_Printf ("Using SDL version %i.%i.%i\n", major, minor, patch);
+ 
+ #ifdef USE_SDL3
++	SDL_SetAppMetadata ("Quake", VKQUAKE_VER_STRING, "org.omarchy.quake");
+ 	const bool initialized = SDL_Init (0);
+ #else
+ 	const bool initialized = SDL_Init (0) >= 0;

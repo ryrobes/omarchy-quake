@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Quake
+GenericName=Quake
+Comment=Quake 1 for Omarchy
+Exec=quake-omarchy panel
+Icon=org.omarchy.quake
+Terminal=false
+Categories=Game;
+StartupNotify=true
+StartupWMClass=org.omarchy.quake
+X-QuakeOmarchy-Managed=true

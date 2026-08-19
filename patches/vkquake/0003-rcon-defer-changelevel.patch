@@ -1,0 +1,26 @@
+diff --git a/Quake/net_dgrm.c b/Quake/net_dgrm.c
+index cda7b55..5e67e60 100644
+--- a/Quake/net_dgrm.c
++++ b/Quake/net_dgrm.c
+@@ -1381,8 +1382,20 @@ static void _Datagram_ServerControlPacket (sys_socket_t acceptsock, struct qsock
+ 			response = "rcon is not enabled on this server";
+ 		else if (!strcmp (password, rcon_password.string))
+ 		{
++			const char *rcmd = MSG_ReadString ();
++			// changelevel/map rebuild sockets. Running them inline from
++			// Datagram_GetAnyMessage (this control packet) SIGSEGVs in
++			// Loop_SendMessage on a listen server. Queue for Cbuf_Execute.
++			if (!q_strncasecmp (rcmd, "changelevel", 11) || !q_strncasecmp (rcmd, "map ", 4) ||
++				!q_strcasecmp (rcmd, "map") || !q_strcasecmp (rcmd, "restart"))
++			{
++				Cbuf_AddText (rcmd);
++				Cbuf_AddText ("\n");
++				Datagram_Rcon_Flush ("queued");
++				return;
++			}
+ 			Con_Redirect (Datagram_Rcon_Flush);
+-			Cmd_ExecuteString (MSG_ReadString (), src_command);
++			Cmd_ExecuteString (rcmd, src_command);
+ 			Con_Redirect (NULL);
+ 			return;
+ 		}

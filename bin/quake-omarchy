@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# quake-omarchy — Quake launcher for Omarchy 4 / Hyprland.
+set -euo pipefail
+
+resolve_root() {
+  if [[ -n ${QUAKE_OMARCHY_ROOT:-} && -d ${QUAKE_OMARCHY_ROOT} ]]; then
+    printf '%s\n' "$QUAKE_OMARCHY_ROOT"
+    return
+  fi
+  local self dir
+  self=$(readlink -f "$0")
+  dir=$(dirname "$self")
+  if [[ -f $dir/../lib/quake-omarchy.sh ]]; then
+    (cd "$dir/.." && pwd)
+    return
+  fi
+  if [[ -f ${HOME}/.local/lib/quake-omarchy/lib/quake-omarchy.sh ]]; then
+    printf '%s\n' "${HOME}/.local/lib/quake-omarchy"
+    return
+  fi
+  if [[ -f /usr/local/lib/quake-omarchy/lib/quake-omarchy.sh ]]; then
+    printf '%s\n' /usr/local/lib/quake-omarchy
+    return
+  fi
+  printf '%s\n' "$dir/.."
+}
+
+QO_ROOT=$(resolve_root)
+export QO_ROOT
+QO_LIB=${QO_LIB:-$QO_ROOT/lib/quake-omarchy.sh}
+export QO_LIB
+# shellcheck disable=SC1090
+source "$QO_LIB"
+
+usage() {
+  cat <<'EOF'
+Quake — native Quake 1 for Omarchy 4
+
+Usage:
+  quake-omarchy                 Play (fetches shareware on first run)
+  quake-omarchy play [opts]
+  quake-omarchy host [opts]     Listen-server; copies a join command
+  quake-omarchy join [host]     Clipboard, LAN/Tailscale scan, or host:port
+  quake-omarchy share           Copy the current join command again
+  quake-omarchy fetch           Download official shareware PAK
+  quake-omarchy import <dir>    Use an existing classic / rerelease folder
+  quake-omarchy editions        List discovered PAK roots as JSON
+  quake-omarchy source          Which edition would launch, and from where
+  quake-omarchy peers           Scan LAN/Tailscale for hosted games
+  quake-omarchy maps            Maps in the current PAK set (JSON)
+  quake-omarchy status          Runtime status JSON
+  quake-omarchy host-status     Live match JSON (rcon status on localhost)
+  quake-omarchy rcon <cmd>      Host admin: status | changelevel | say | kick
+  quake-omarchy changelevel <m> Same as: rcon changelevel <map>
+  quake-omarchy next-map        Host: changelevel to the next PAK map
+  quake-omarchy prev-map        Host: changelevel to the previous PAK map
+  quake-omarchy panel           Open the Omarchy shell panel
+  quake-omarchy stop            Quit a running game
+  quake-omarchy config <k> <v>  Set edition|renderer|basedir|windowed|map|port
+                                name|shirt|pants
+
+Play/host options:
+  --edition auto|shareware|classic|rerelease
+  --windowed
+  --map e1m2
+  --port 26000
+  --players 8
+  --coop
+  --name <nick>                 Max 15 chars (default: Omarchy username)
+  --shirt 0-13 --pants 0-13     Player colors
+EOF
+}
+
+cmd_join() {
+  local target="" peers count
+  if (($#)); then
+    target=$(qo_parse_join "$@") || qo_die "could not parse join address: $*"
+  fi
+  if [[ -z $target ]]; then
+    target=$(qo_join_from_clipboard) || true
+    [[ -n $target ]] && qo_log "joining from clipboard: $target"
+  fi
+  if [[ -z $target ]]; then
+    peers=$(qo_scan_peers)
+    count=$(python3 -c 'import json,sys; print(len(json.loads(sys.stdin.read() or "[]")))' <<<"$peers" 2>/dev/null || echo 0)
+    if (( count == 1 )); then
+      target=$(python3 -c 'import json,sys; p=json.load(sys.stdin)[0]; print("%s:%s" % (p.get("ip"), p.get("port") or 26000))' <<<"$peers")
+    elif (( count > 1 )) && [[ -t 0 && -t 1 ]] && command -v gum >/dev/null; then
+      target=$(python3 -c 'import json,sys
+peers=json.load(sys.stdin)
+for p in peers:
+    print("%s:%s\t%s  %s  %s" % (p.get("ip"), p.get("port") or 26000, p.get("name") or p.get("ip"), p.get("map") or "?", p.get("mode") or "deathmatch"))
+' <<<"$peers" | gum choose --header "Join deathmatch") || exit 0
+      target=${target%%$'\t'*}
+    fi
+  fi
+  if [[ -z $target ]]; then
+    qo_notify "Join" "No live games found. Host copies a join command — or pick a game in the panel."
+    qo_open_panel
+    return 0
+  fi
+  qo_launch join --connect "$target" "$@"
+}
+
+cmd_panel() {
+  qo_open_panel
+}
+
+main() {
+  local cmd=${1:-play}
+  [[ $# -gt 0 ]] && shift
+  case $cmd in
+    -h|--help|help) usage ;;
+    play|run|start) qo_launch play "$@" ;;
+    host) qo_launch host "$@" ;;
+    join) cmd_join "$@" ;;
+    share|copy) qo_config_load; qo_share_join ;;
+    fetch|download) qo_fetch_shareware ;;
+    import) qo_import "${1:-}" ;;
+    editions) qo_editions_report ;;
+    source) qo_source_print "${1:-}" ;;
+    peers) qo_scan_peers ;;
+    maps) qo_maps_print "${1:-auto}" ;;
+    status) qo_status_print ;;
+    host-status|match) qo_host_status ;;
+    rcon)
+      [[ $# -ge 1 ]] || qo_die "usage: quake-omarchy rcon <status|changelevel|say|kick|...>"
+      qo_rcon_safe "$@"
+      ;;
+    changelevel)
+      [[ $# -eq 1 ]] || qo_die "usage: quake-omarchy changelevel <map>"
+      qo_rcon_safe changelevel "$1"
+      ;;
+    next-map|map-next) qo_changelevel_delta 1 ;;
+    prev-map|map-prev) qo_changelevel_delta -1 ;;
+    window-ready) qo_game_window_mapped ;;
+    panel|setup) cmd_panel ;;
+    stop|kill|quit) qo_stop ;;
+    focus) qo_focus ;;
+    config)
+      [[ $# -eq 2 ]] || qo_die "usage: quake-omarchy config <key> <value>"
+      qo_config_set "$1" "$2"
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

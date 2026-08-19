@@ -1,0 +1,12 @@
+/build/
+/vendor/vkQuake/
+/pkg/
+/src/
+*.pkg.tar.*
+*.pak
+*.zip
+*.kpf
+.cache/
+__pycache__/
+*.pyc
+*.srcinfo

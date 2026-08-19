@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "quake.omarchy",
+  "name": "Quake",
+  "version": "1.4.6",
+  "author": "quake-omarchy",
+  "license": "GPL-2.0-or-later",
+  "description": "Quake 1 for Omarchy: shareware fetch, Hyprland/Wayland, and deathmatch.",
+  "kinds": [
+    "panel",
+    "service"
+  ],
+  "entryPoints": {
+    "panel": "Panel.qml",
+    "service": "Service.qml"
+  }
+}

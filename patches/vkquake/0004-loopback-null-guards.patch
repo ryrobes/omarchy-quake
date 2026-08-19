@@ -1,0 +1,61 @@
+diff --git a/Quake/net_loop.c b/Quake/net_loop.c
+index bb8300d..4680bb8 100644
+--- a/Quake/net_loop.c
++++ b/Quake/net_loop.c
+@@ -127,6 +127,8 @@ int Loop_GetMessage (qsocket_t *sock)
+ 	int ret;
+ 	int length;
+ 
++	if (!sock || sock->disconnected)
++		return -1;
+ 	if (sock->receiveMessageLength == 0)
+ 		return 0;
+ 
+@@ -161,7 +163,7 @@ int Loop_GetMessage (qsocket_t *sock)
+ 
+ qsocket_t *Loop_GetAnyMessage (void)
+ {
+-	if (loop_server)
++	if (loop_server && !loop_server->disconnected)
+ 	{
+ 		if (Loop_GetMessage (loop_server) > 0)
+ 			return loop_server;
+@@ -171,18 +173,22 @@ qsocket_t *Loop_GetAnyMessage (void)
+ 
+ int Loop_SendMessage (qsocket_t *sock, sizebuf_t *data)
+ {
+-	byte *buffer;
+-	int	 *bufferLength;
++	byte	  *buffer;
++	int		  *bufferLength;
++	qsocket_t *peer;
+ 
+-	if (!sock->driverdata)
++	if (!sock || sock->disconnected || !data)
++		return -1;
++	peer = (qsocket_t *)sock->driverdata;
++	if (!peer || peer->disconnected)
+ 		return -1;
+ 
+-	bufferLength = &((qsocket_t *)sock->driverdata)->receiveMessageLength;
++	bufferLength = &peer->receiveMessageLength;
+ 
+ 	if ((*bufferLength + data->cursize + NET_LOOPBACKHEADERSIZE) > NET_MAXMESSAGE * NET_LOOPBACKBUFFERS + NET_LOOPBACKHEADERSIZE)
+ 		Sys_Error ("Loop_SendMessage: overflow");
+ 
+-	buffer = ((qsocket_t *)sock->driverdata)->receiveMessage + *bufferLength;
++	buffer = peer->receiveMessage + *bufferLength;
+ 
+ 	// message type
+ 	*buffer++ = 1;
+@@ -208,7 +214,9 @@ int Loop_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
+ 	int	 *bufferLength;
+ 	int	  sequence = sock->unreliableSendSequence++;
+ 
+-	if (!sock->driverdata)
++	if (!sock || sock->disconnected || !sock->driverdata)
++		return -1;
++	if (((qsocket_t *)sock->driverdata)->disconnected)
+ 		return -1;
+ 
+ 	bufferLength = &((qsocket_t *)sock->driverdata)->receiveMessageLength;
