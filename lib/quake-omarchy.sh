@@ -1308,6 +1308,25 @@ qo_open_panel() {
     out=$(omarchy-shell shell summon quake.omarchy '{"mode":"main"}' 2>&1) || true
   fi
   [[ $out == ok ]] || qo_die "could not open the Quake panel${out:+: $out}"
+  qo_dismiss_launch_feedback
+}
+
+# Omarchy's app launcher shows a "Launching Quake…" OSD 2s after gtk-launch
+# unless a new toplevel appears, and keeps it for 15s. Our panel is a
+# layer-shell surface, not a toplevel, so the OSD would sit on top of it.
+# gtk-launch marks its children with GIO_LAUNCHED_DESKTOP_FILE; when that is
+# set, close the OSD after it has had time to appear.
+qo_dismiss_launch_feedback() {
+  [[ -n ${GIO_LAUNCHED_DESKTOP_FILE:-} ]] || return 0
+  qo_cmd omarchy-shell || return 0
+  (
+    local d
+    for d in 2.4 3.2 4.5; do
+      sleep "$d"
+      omarchy-shell -q osd close >/dev/null 2>&1 || true
+    done
+  ) >/dev/null 2>&1 </dev/null &
+  disown 2>/dev/null || true
 }
 
 # --- Tailscale / host discovery --------------------------------------------
