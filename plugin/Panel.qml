@@ -61,10 +61,12 @@ Item {
   readonly property string matchLine: Model.matchLine(matchStatus, hostMap)
   readonly property var filteredMaps: Model.filterMaps(root.mapOptions, root.mapQuery, 12)
   readonly property bool starting: {
-    if (status && status.error) return false
-    if (status && status.mode === "starting") return true
-    if (status && status.mode === "fetch") return false
-    if (root.hideAfterLaunch && status && status.window !== true) return true
+    if (!status || status.error) return false
+    var mode = String(status.mode || "")
+    if (mode === "starting") return true
+    if (mode === "fetch" || mode === "idle" || mode === "error" || mode === "") return false
+    // Launched from here, game process up, window not mapped yet.
+    if (root.hideAfterLaunch && status.window !== true) return true
     return false
   }
   readonly property string startingLabel: {
@@ -219,7 +221,11 @@ Item {
   }
 
   onStatusChanged: {
-    if (!root.opened || !status) return
+    if (!status) return
+    var mode = String(status.mode || "")
+    if (root.hideAfterLaunch && (mode === "idle" || mode === "error" || status.error))
+      root.hideAfterLaunch = false
+    if (!root.opened) return
     if (root.hideAfterLaunch && status.window === true)
       Qt.callLater(root.dismissLaunch)
   }
@@ -532,7 +538,7 @@ Item {
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.namespace: "quake-omarchy"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: root.starting ? WlrKeyboardFocus.None : (root.hosting ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.Exclusive)
+    WlrLayershell.keyboardFocus: (root.starting || root.hosting) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.Exclusive
     mask: Region { item: (root.starting || root.hosting) ? card : hitLayer }
 
     Item {
@@ -620,7 +626,7 @@ Item {
               accent: root.accent
             }
           }
-          trailingControl: joinCommand.length ? copyButton : null
+          trailingControl: (joinCommand.length && !root.starting) ? copyButton : null
         }
 
         Component {
@@ -689,7 +695,10 @@ Item {
             text: "Cancel"
             foreground: root.foreground
             bordered: true
-            onClicked: root.stop()
+            onClicked: {
+              root.hideAfterLaunch = false
+              root.stop()
+            }
           }
         }
 

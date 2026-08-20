@@ -1138,6 +1138,9 @@ data.update({
     "fetch": None,
     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
 })
+# A join command from a previous session is meaningless now; the host
+# subshell writes a fresh one after the server is up.
+data["host"] = None
 tmp = path + ".tmp"
 with open(tmp, "w") as f:
     json.dump(data, f)
@@ -1167,6 +1170,9 @@ data["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 if mode in ("idle", "error"):
     data["running"] = False
     data["window"] = False
+    # The game is gone: any advertised host/join target died with it.
+    data["host"] = None
+    data["join"] = None
     if mode == "idle":
         data["pid"] = None
         data["fetch"] = None
@@ -1825,13 +1831,18 @@ qo_watch_lock() {
 # --- launch ----------------------------------------------------------------
 
 qo_game_pid() {
-  local file pid
+  local file pid comm
   file=$(qo_pid_file)
   [[ -f $file ]] || return 1
   pid=$(<"$file")
   if [[ -n $pid ]] && kill -0 "$pid" 2>/dev/null; then
-    printf '%s\n' "$pid"
-    return 0
+    # Guard against pid reuse (a stale file left by a killed wrapper):
+    # only report a process that really is the engine.
+    comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+    if [[ $comm == vkquake ]]; then
+      printf '%s\n' "$pid"
+      return 0
+    fi
   fi
   rm -f "$file"
   qo_status_reap
@@ -1914,6 +1925,7 @@ qo_launch() {
   local players=$QO_CFG_PLAYERS
   local connect_host=
   local deathmatch=1
+  local map_explicit=0
   local extra=()
 
   while (($#)); do
@@ -1921,7 +1933,7 @@ qo_launch() {
       --edition) edition=$2; shift 2 ;;
       --windowed) windowed=true; shift ;;
       --fullscreen) windowed=false; shift ;;
-      --map) map=$2; shift 2 ;;
+      --map) map=$2; map_explicit=1; shift 2 ;;
       --port) port=$2; shift 2 ;;
       --players) players=$2; shift 2 ;;
       --connect) connect_host=$2; shift 2 ;;
@@ -1942,7 +1954,11 @@ qo_launch() {
   fi
 
   qo_mkdirs
-  qo_status_starting "$mode" "${map:-}" "$edition" "${connect_host:-}"
+  local start_map=$map
+  if [[ $mode == play && $map_explicit -eq 0 ]] || [[ $mode == join ]]; then
+    start_map=""
+  fi
+  qo_status_starting "$mode" "$start_map" "$edition" "${connect_host:-}"
   if [[ -z ${QO_FROM_PANEL:-} ]] && command -v omarchy-shell >/dev/null; then
     omarchy-shell shell summon quake.omarchy '{"mode":"starting"}' >/dev/null 2>&1 || true
   fi
@@ -2009,6 +2025,9 @@ qo_launch() {
       qo_write_session_files join "" "$connect_host"
       ;;
     play)
+      # Vanilla launch (demo loop + menu). The config map is a deathmatch
+      # setting; only an explicit --map should skip the intro.
+      (( map_explicit )) || map=""
       qo_write_session_files play
       if [[ -n $map ]]; then
         printf 'map %s\n' "$map" >>"$(qo_userdir)/id1/omarchy-session.cfg"
@@ -2050,6 +2069,7 @@ data.update({
     "windowed": windowed == "true",
     "renderer": renderer,
     "join": connect_host if mode == "join" else None,
+    "host": None,
     "fetch": None,
     "error": None,
     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -2083,10 +2103,15 @@ PY
       host_json=$(qo_advertise_host "$map" "$port" "$( ((deathmatch)) && echo deathmatch || echo coop)" "$actual")
       python3 "$(qo_beacon_py)" serve --port "$QO_BEACON_PORT" --payload "$host_json" &
       printf '%s\n' $! >"$(qo_state_dir)/beacon.pid"
-      printf '%s' "$host_json" | python3 - "$(qo_status_file)" <<'PY'
-import json, sys
-path = sys.argv[1]
-host = json.load(sys.stdin)
+      # host_json goes in argv: piping it AND using a heredoc would hand
+      # python an empty stdin (the heredoc is the program).
+      python3 - "$(qo_status_file)" "$host_json" <<'PY' || true
+import json, os, sys
+path, host_raw = sys.argv[1], sys.argv[2]
+try:
+    host = json.loads(host_raw)
+except json.JSONDecodeError:
+    raise SystemExit(0)
 data = {}
 try:
     with open(path) as f:
@@ -2098,7 +2123,6 @@ tmp = path + ".tmp"
 with open(tmp, "w") as f:
     json.dump(data, f)
     f.write("\n")
-os = __import__("os")
 os.replace(tmp, path)
 PY
       join_cmd=$(printf '%s' "$host_json" | python3 -c 'import json,sys; print((json.load(sys.stdin) or {}).get("command") or "")')
