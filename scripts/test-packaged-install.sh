@@ -69,11 +69,21 @@ WORKDIR=$ROOT/build/makepkg-omarchy-quake
 ARCH=$(uname -m)
 
 step "0. build dependencies (compiler + lavapipe for VMs without a GPU)"
-pkg_add \
-  base-devel git meson ninja pkgconf \
-  sdl3 vulkan-headers vulkan-icd-loader vulkan-swrast glslang spirv-tools \
-  mpg123 libvorbis flac opus libogg \
+# Filter through `pacman -T` first: it resolves provides, so an installed
+# vulkan-headers-git (etc.) satisfies vulkan-headers instead of making
+# `pacman -S` fail on a package conflict.
+DEPS=(
+  base-devel git meson ninja pkgconf patch
+  sdl3 vulkan-headers vulkan-icd-loader vulkan-swrast glslang spirv-tools
+  mpg123 libvorbis flac opus libogg
   python
+)
+mapfile -t MISSING < <(pacman -T "${DEPS[@]}" || true)
+if (( ${#MISSING[@]} )); then
+  pkg_add "${MISSING[@]}"
+else
+  echo "all build dependencies already installed"
+fi
 
 step "1. unit tests (no vkQuake compile)"
 run make test
