@@ -1306,16 +1306,46 @@ qo_open_panel() {
   command -v omarchy-shell >/dev/null || qo_die "omarchy-shell is not running"
   qo_mkdirs
   qo_status_reap
-  local out
-  out=$(omarchy-shell shell summon quake.omarchy '{"mode":"main"}' 2>&1) || \
-    qo_die "could not open the Quake panel${out:+: $out}"
-  if [[ $out == unknown ]]; then
-    omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
-    omarchy-shell shell enablePlugin quake.omarchy '{}' >/dev/null 2>&1 || true
+  # The installer restarts the shell right before launching the panel, so the
+  # first summon can hit a shell that is still starting ("not responding") or
+  # has not scanned plugins yet ("unknown"). Retry for a while before dying.
+  local out="" i
+  for i in $(seq 1 8); do
     out=$(omarchy-shell shell summon quake.omarchy '{"mode":"main"}' 2>&1) || true
-  fi
-  [[ $out == ok ]] || qo_die "could not open the Quake panel${out:+: $out}"
-  qo_dismiss_launch_feedback
+    if [[ $out == ok ]]; then
+      qo_clear_stale_error
+      qo_dismiss_launch_feedback
+      return 0
+    fi
+    if [[ $out == unknown ]]; then
+      omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+      omarchy-shell shell enablePlugin quake.omarchy '{}' >/dev/null 2>&1 || true
+    fi
+    sleep 1
+  done
+  qo_die "could not open the Quake panel${out:+: $out}"
+}
+
+# A failed panel open writes mode=error into status.json, and the panel would
+# keep showing that stale line. Opening successfully clears it.
+qo_clear_stale_error() {
+  python3 - "$(qo_status_file)" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception:
+    raise SystemExit(0)
+if data.get("mode") == "error" or data.get("error"):
+    data["mode"] = "idle" if data.get("mode") in ("error",) else data.get("mode")
+    data["error"] = None
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f)
+        f.write("\n")
+    os.replace(tmp, path)
+PY
 }
 
 # Omarchy's app launcher shows a "Launching Quake…" OSD 2s after gtk-launch
