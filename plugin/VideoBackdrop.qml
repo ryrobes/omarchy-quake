@@ -10,7 +10,7 @@ Item {
   id: root
 
   property color tint: "#808080"
-  property real strength: 0.10
+  property real strength: 0.18
   property bool active: false
   property url source: Qt.resolvedUrl("demo-loop.mp4")
   property bool failed: false
