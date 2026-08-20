@@ -153,20 +153,24 @@ Item {
   function play() {
     root.hideAfterLaunch = true
     run("play", "--edition", edition)
+    launchWatchdog.restart()
   }
   function host() {
     root.hideAfterLaunch = true
     run("host", "--edition", edition, "--map", hostMap)
+    launchWatchdog.restart()
   }
   function join() {
     root.hideAfterLaunch = true
     if (joinTarget && joinTarget.length) {
       run("join", joinTarget)
+      launchWatchdog.restart()
       return
     }
     // No address picked: the CLI checks the clipboard, then scans the
     // tailnet/LAN, and reports if nothing is live.
     run("join")
+    launchWatchdog.restart()
   }
 
   function openDeathmatch(intent) {
@@ -223,11 +227,27 @@ Item {
   onStatusChanged: {
     if (!status) return
     var mode = String(status.mode || "")
+    if (mode !== "idle" || status.error) launchWatchdog.stop()
     if (root.hideAfterLaunch && (mode === "idle" || mode === "error" || status.error))
       root.hideAfterLaunch = false
     if (!root.opened) return
     if (root.hideAfterLaunch && status.window === true)
       Qt.callLater(root.dismissLaunch)
+  }
+
+  // If the CLI never writes any status after a launch click, the exec
+  // itself failed (binary missing from PATH, broken install). Say so
+  // instead of silently doing nothing.
+  Timer {
+    id: launchWatchdog
+    interval: 4000
+    onTriggered: {
+      var mode = status ? String(status.mode || "") : ""
+      if (mode === "idle" && !((status && status.error))) {
+        root.hideAfterLaunch = false
+        root.errorText = "omarchy-quake did not respond — is it installed and on PATH? (make install, or pacman -S omarchy-quake)"
+      }
+    }
   }
 
   Process {
