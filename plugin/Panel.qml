@@ -34,6 +34,11 @@ Item {
   property string errorText: ""
   property bool dismissAfterRcon: false
   property string mapQuery: ""
+  // Collapsible sections. dmIntent narrows the deathmatch section to the
+  // host or join flow ("" from the header shows both).
+  property bool dmExpanded: false
+  property string dmIntent: ""
+  property bool settingsOpen: false
 
   readonly property string home: Quickshell.env("HOME")
   readonly property string pluginDir: (manifest && manifest.__sourceDir) || (home + "/.config/omarchy/plugins/quake.omarchy")
@@ -91,6 +96,9 @@ Item {
     root.opened = true
     root.errorText = ""
     root.mapQuery = ""
+    root.dmExpanded = false
+    root.dmIntent = ""
+    root.settingsOpen = false
     try {
       var payload = JSON.parse(payloadJson || "{}")
       if (payload && payload.mode === "starting")
@@ -149,12 +157,25 @@ Item {
     run("host", "--edition", edition, "--map", hostMap)
   }
   function join() {
+    root.hideAfterLaunch = true
     if (joinTarget && joinTarget.length) {
-      root.hideAfterLaunch = true
       run("join", joinTarget)
       return
     }
-    root.refreshPeers()
+    // No address picked: the CLI checks the clipboard, then scans the
+    // tailnet/LAN, and reports if nothing is live.
+    run("join")
+  }
+
+  function openDeathmatch(intent) {
+    if (root.dmExpanded && root.dmIntent === intent) {
+      root.dmExpanded = false
+      root.dmIntent = ""
+      return
+    }
+    root.dmExpanded = true
+    root.dmIntent = intent || ""
+    if (intent !== "host") root.refreshPeers()
   }
   function stop() { run("stop") }
   function copyJoin() { run("share") }
@@ -309,6 +330,56 @@ Item {
           }
         }
       }
+    }
+  }
+
+  // Clickable section header with a chevron; content elsewhere binds
+  // `visible` to the expanded flag and the Column reflows.
+  component SectionExpander: Item {
+    id: expander
+    property string label: ""
+    property string hint: ""
+    property bool expanded: false
+    signal toggled()
+    width: parent ? parent.width : implicitWidth
+    implicitHeight: headerRow.implicitHeight + Style.space(6)
+    height: implicitHeight
+
+    Row {
+      id: headerRow
+      anchors.verticalCenter: parent.verticalCenter
+      width: parent.width
+      spacing: Style.spacing.controlGap
+
+      Text {
+        text: expander.expanded ? "▾" : "▸"
+        color: root.accent
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: true
+      }
+      Text {
+        id: expanderLabel
+        text: expander.label
+        color: Qt.darker(root.foreground, 1.4)
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: true
+      }
+      Text {
+        width: Math.max(0, headerRow.width - expanderLabel.implicitWidth - Style.space(40))
+        text: expander.hint
+        color: root.muted
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+        elide: Text.ElideRight
+      }
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      cursorShape: Qt.PointingHandCursor
+      onClicked: expander.toggled()
     }
   }
 
@@ -754,249 +825,307 @@ Item {
 
         PanelSectionHeader {
           visible: !root.hosting && !root.starting
-          text: "PLAYER"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-        }
-
-        Column {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          spacing: Style.spacing.labelGap
-
-          Text {
-            text: "Name"
-            color: root.muted
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-            font.bold: true
-          }
-
-          Row {
-            width: parent.width
-            spacing: Style.spacing.controlGap
-
-            TextField {
-              id: nameField
-              width: parent.width - preview.width - parent.spacing
-              text: root.playerName
-              placeholderText: root.defaultName
-              maximumLength: 15
-              foreground: root.foreground
-              onEditingFinished: {
-                root.playerName = text
-                root.commitName()
-              }
-              onAccepted: {
-                root.playerName = text
-                root.commitName()
-              }
-            }
-
-            Item {
-              id: preview
-              width: nameField.height
-              height: nameField.height
-              Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: Math.round(parent.height * 0.55)
-                radius: 2
-                color: Model.colorHex(root.pantsColor)
-              }
-              Rectangle {
-                anchors.top: parent.top
-                width: parent.width
-                height: Math.round(parent.height * 0.55)
-                radius: 2
-                color: Model.colorHex(root.shirtColor)
-              }
-            }
-          }
-        }
-
-        ColorSwatchRow {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "Shirt"
-          value: root.shirtColor
-          onPicked: function(v) {
-            root.shirtColor = v
-            root.setConfig("shirt", String(v))
-          }
-        }
-
-        ColorSwatchRow {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "Pants"
-          value: root.pantsColor
-          onPicked: function(v) {
-            root.pantsColor = v
-            root.setConfig("pants", String(v))
-          }
-        }
-
-        PanelSectionHeader {
-          visible: !root.hosting && !root.starting
           text: "LAUNCH"
           foreground: root.foreground
           fontFamily: root.fontFamily
         }
 
-        Row {
+        Flow {
+          width: parent.width
           visible: !root.hosting && !root.starting
           spacing: Style.spacing.controlGap
+
           Button {
-            text: busy ? "Stop" : "Play"
+            text: busy ? "Stop" : "Play singleplayer"
             foreground: root.foreground
             bordered: true
             onClicked: busy ? root.stop() : root.play()
           }
           Button {
-            text: "Host"
+            text: "Host deathmatch"
             foreground: root.foreground
             bordered: true
             enabled: !busy
-            onClicked: root.host()
+            selected: root.dmExpanded && root.dmIntent === "host"
+            onClicked: root.openDeathmatch("host")
           }
           Button {
-            text: "Join"
+            text: "Join deathmatch"
             foreground: root.foreground
             bordered: true
             enabled: !busy
-            onClicked: root.join()
+            selected: root.dmExpanded && root.dmIntent === "join"
+            onClicked: root.openDeathmatch("join")
           }
         }
 
-        PanelSectionHeader {
-          visible: !root.hosting && !root.starting
-          text: "VIDEO"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-        }
+        PanelSeparator { width: parent.width; visible: !root.hosting && !root.starting }
 
-        Toggle {
-          width: parent.width
+        SectionExpander {
           visible: !root.hosting && !root.starting
-          label: "Fullscreen"
-          description: "Off: Esc frees the mouse. Click the game to recapture."
-          checked: root.fullscreen
-          foreground: root.foreground
-          onClicked: {
-            root.fullscreen = !root.fullscreen
-            root.setConfig("fullscreen", root.fullscreen ? "true" : "false")
+          label: "DEATHMATCH"
+          hint: root.dmExpanded ? "" : (root.playerName + " · " + root.hostMap)
+          expanded: root.dmExpanded
+          onToggled: {
+            root.dmExpanded = !root.dmExpanded
+            root.dmIntent = ""
+            if (root.dmExpanded) root.refreshPeers()
           }
         }
 
-        Dropdown {
+        Column {
+          id: dmBody
           width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "Resolution"
-          value: root.resolution
-          foreground: root.foreground
-          options: Model.resolutionOptions()
-          onChanged: function(v) {
-            root.resolution = v
-            root.setConfig("resolution", v)
+          visible: root.dmExpanded && !root.hosting && !root.starting
+          spacing: Style.spacing.rowGap
+
+          Column {
+            width: parent.width
+            spacing: Style.spacing.labelGap
+
+            Text {
+              text: "Name"
+              color: root.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+            }
+
+            Row {
+              width: parent.width
+              spacing: Style.spacing.controlGap
+
+              TextField {
+                id: nameField
+                width: parent.width - preview.width - parent.spacing
+                text: root.playerName
+                placeholderText: root.defaultName
+                maximumLength: 15
+                foreground: root.foreground
+                onEditingFinished: {
+                  root.playerName = text
+                  root.commitName()
+                }
+                onAccepted: {
+                  root.playerName = text
+                  root.commitName()
+                }
+              }
+
+              Item {
+                id: preview
+                width: nameField.height
+                height: nameField.height
+                Rectangle {
+                  anchors.bottom: parent.bottom
+                  width: parent.width
+                  height: Math.round(parent.height * 0.55)
+                  radius: 2
+                  color: Model.colorHex(root.pantsColor)
+                }
+                Rectangle {
+                  anchors.top: parent.top
+                  width: parent.width
+                  height: Math.round(parent.height * 0.55)
+                  radius: 2
+                  color: Model.colorHex(root.shirtColor)
+                }
+              }
+            }
           }
-        }
 
-        Toggle {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "VSync"
-          checked: root.vsync
-          foreground: root.foreground
-          onClicked: {
-            root.vsync = !root.vsync
-            root.setConfig("vsync", root.vsync ? "true" : "false")
+          ColorSwatchRow {
+            width: parent.width
+            label: "Shirt"
+            value: root.shirtColor
+            onPicked: function(v) {
+              root.shirtColor = v
+              root.setConfig("shirt", String(v))
+            }
           }
-        }
 
-        Dropdown {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "Edition"
-          value: root.edition
-          foreground: root.foreground
-          options: [
-            { value: "auto", label: "Auto (classic, then shareware)" },
-            { value: "shareware", label: "Shareware" },
-            { value: "classic", label: "Registered / classic" },
-            { value: "rerelease", label: "2021 re-release" }
-          ]
-          onChanged: function(v) {
-            root.edition = v
-            root.setConfig("edition", v)
-            root.refreshSource()
-            root.refreshMaps()
+          ColorSwatchRow {
+            width: parent.width
+            label: "Pants"
+            value: root.pantsColor
+            onPicked: function(v) {
+              root.pantsColor = v
+              root.setConfig("pants", String(v))
+            }
           }
-        }
 
-        SearchableDropdown {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          label: "Host map"
-          value: root.hostMap
-          foreground: root.foreground
-          options: root.mapOptions
-          onChanged: function(v) {
-            root.hostMap = v
-            root.setConfig("map", v)
+          Column {
+            width: parent.width
+            visible: root.dmIntent !== "join"
+            spacing: Style.spacing.rowGap
+
+            SearchableDropdown {
+              width: parent.width
+              label: "Map"
+              value: root.hostMap
+              foreground: root.foreground
+              options: root.mapOptions
+              onChanged: function(v) {
+                root.hostMap = v
+                root.setConfig("map", v)
+              }
+            }
+
+            Button {
+              text: "Start hosting " + root.hostMap
+              foreground: root.foreground
+              bordered: true
+              enabled: !busy
+              onClicked: root.host()
+            }
+
+            Text {
+              width: parent.width
+              text: "Hosting copies a join command for the other machine (same Tailscale tailnet, or the same LAN). Up to 8 players; Super+Shift+Q changes maps mid-match."
+                + (root.edition === "rerelease"
+                  ? " 2021 re-release hosts need the same remaster on every machine."
+                  : " Shareware/classic hosts are joinable with the same original PAKs.")
+              color: root.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.Wrap
+            }
           }
-        }
 
-        PanelSectionHeader {
-          visible: !root.hosting && !root.starting
-          text: "DEATHMATCH"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-        }
+          PanelSeparator { width: parent.width; visible: root.dmIntent === "" }
 
-        Text {
-          width: parent.width
-          visible: !root.hosting && !root.starting
-          text: (peers.length === 0
-            ? "Host copies a join command. The other machine runs it (same Tailscale tailnet, or the same LAN). Join uses that command from the clipboard if you copied it."
-            : peers.length + " game" + (peers.length === 1 ? "" : "s") + " advertising nearby.")
-            + " Up to 8 players. When you host: Super+Shift+Q changes maps, Super+Shift+[ / ] cycles them. Host console (~): changelevel dm2 keeps everyone; map dm2 kicks clients."
-            + (root.edition === "rerelease"
-              ? " 2021 re-release hosts need the same remaster on every machine."
-              : " Shareware/classic hosts are joinable with the same original PAKs.")
-          color: root.muted
-          font.family: root.fontFamily
-          font.pixelSize: Style.font.caption
-          wrapMode: Text.Wrap
-        }
+          Column {
+            width: parent.width
+            visible: root.dmIntent !== "host"
+            spacing: Style.spacing.rowGap
 
-        Repeater {
-          model: root.hosting ? 0 : (root.peers ? root.peers.length : 0)
-          Button {
-            width: body.width
-            property var peer: root.peers[index] || ({})
-            text: Model.peerLabel(peer)
-            leftAlign: true
-            foreground: root.foreground
-            selected: root.joinTarget === Model.peerTarget(peer)
-            onClicked: {
-              root.selectPeer(peer)
-              root.join()
+            Text {
+              width: parent.width
+              text: root.peers && root.peers.length
+                ? root.peers.length + " game" + (root.peers.length === 1 ? "" : "s") + " advertising nearby — click one to join."
+                : "No games advertising nearby. Paste host:port below — or copy the host’s join command anywhere and just click Join."
+              color: root.muted
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.Wrap
+            }
+
+            Repeater {
+              model: root.peers ? root.peers.length : 0
+              Button {
+                width: dmBody.width
+                property var peer: root.peers[index] || ({})
+                text: Model.peerLabel(peer)
+                leftAlign: true
+                foreground: root.foreground
+                selected: root.joinTarget === Model.peerTarget(peer)
+                onClicked: {
+                  root.selectPeer(peer)
+                  root.join()
+                }
+              }
+            }
+
+            TextField {
+              id: joinField
+              width: parent.width
+              placeholderText: "host:26000 (empty: use the copied join command)"
+              text: root.joinTarget
+              foreground: root.foreground
+              onEditingFinished: root.joinTarget = text
+              onAccepted: {
+                root.joinTarget = text
+                root.join()
+              }
+            }
+
+            Row {
+              spacing: Style.spacing.controlGap
+              Button {
+                text: "Join"
+                foreground: root.foreground
+                bordered: true
+                enabled: !busy
+                onClicked: {
+                  root.joinTarget = joinField.text
+                  root.join()
+                }
+              }
+              Button {
+                text: "Rescan"
+                foreground: root.foreground
+                bordered: true
+                onClicked: root.refreshPeers()
+              }
             }
           }
         }
 
-        TextField {
-          id: joinField
-          width: parent.width
+        SectionExpander {
           visible: !root.hosting && !root.starting
-          placeholderText: "omarchy-quake join host:26000"
-          text: root.joinTarget
-          foreground: root.foreground
-          onEditingFinished: root.joinTarget = text
-          onAccepted: {
-            root.joinTarget = text
-            root.join()
+          label: "SETTINGS"
+          hint: root.settingsOpen ? "" : ((root.fullscreen ? "fullscreen" : "windowed") + " · " + root.resolution + " · " + Model.editionLabel(root.edition))
+          expanded: root.settingsOpen
+          onToggled: root.settingsOpen = !root.settingsOpen
+        }
+
+        Column {
+          width: parent.width
+          visible: root.settingsOpen && !root.hosting && !root.starting
+          spacing: Style.spacing.rowGap
+
+          Toggle {
+            width: parent.width
+            label: "Fullscreen"
+            description: "Off: Esc frees the mouse. Click the game to recapture."
+            checked: root.fullscreen
+            foreground: root.foreground
+            onClicked: {
+              root.fullscreen = !root.fullscreen
+              root.setConfig("fullscreen", root.fullscreen ? "true" : "false")
+            }
+          }
+
+          Dropdown {
+            width: parent.width
+            label: "Resolution"
+            value: root.resolution
+            foreground: root.foreground
+            options: Model.resolutionOptions()
+            onChanged: function(v) {
+              root.resolution = v
+              root.setConfig("resolution", v)
+            }
+          }
+
+          Toggle {
+            width: parent.width
+            label: "VSync"
+            checked: root.vsync
+            foreground: root.foreground
+            onClicked: {
+              root.vsync = !root.vsync
+              root.setConfig("vsync", root.vsync ? "true" : "false")
+            }
+          }
+
+          Dropdown {
+            width: parent.width
+            label: "Edition"
+            value: root.edition
+            foreground: root.foreground
+            options: [
+              { value: "auto", label: "Auto (classic, then shareware)" },
+              { value: "shareware", label: "Shareware" },
+              { value: "classic", label: "Registered / classic" },
+              { value: "rerelease", label: "2021 re-release" }
+            ]
+            onChanged: function(v) {
+              root.edition = v
+              root.setConfig("edition", v)
+              root.refreshSource()
+              root.refreshMaps()
+            }
           }
         }
 
