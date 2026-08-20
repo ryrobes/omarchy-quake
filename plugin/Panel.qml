@@ -589,9 +589,24 @@ Item {
       padding: Style.spacing.panelPadding
       clip: true
 
+      // Animated backdrop when plugin/demo-loop.mp4 and qt6-multimedia
+      // exist; otherwise the Loader errors out quietly and the static
+      // watermark below stays.
+      Loader {
+        id: videoLoader
+        anchors.fill: parent
+        asynchronous: true
+        source: Qt.resolvedUrl("VideoBackdrop.qml")
+        onLoaded: {
+          item.tint = Qt.binding(function() { return root.muted })
+          item.active = Qt.binding(function() { return root.opened })
+        }
+      }
+
       QuakeWatermark {
         anchors.fill: parent
         color: root.muted
+        visible: !(videoLoader.status === Loader.Ready && videoLoader.item && videoLoader.item.showing)
       }
 
       MouseArea { anchors.fill: parent; onClicked: {} }

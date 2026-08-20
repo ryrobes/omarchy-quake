@@ -69,3 +69,12 @@ omarchy-quake config renderer auto       # auto|gpu|software
 | `packaging/` | PKGBUILD and Omarchy installer drafts |
 
 User data lives under XDG: config in `~/.config/quake-omarchy`, shareware/saves in `~/.local/share/quake-omarchy`, live status in `~/.local/state/quake-omarchy/status.json` (the QML hook).
+
+## Panel video backdrop (optional)
+
+Drop a short, silent, square-ish clip at `plugin/demo-loop.mp4` and the panel
+plays it faintly behind the content — desaturated, tinted to the active theme,
+center-cropped to cover, paused while the panel is hidden. Needs
+`qt6-multimedia` + `qt6-multimedia-ffmpeg`; without them (or without the file)
+the static Q watermark is used. Keep the clip small (a few MB, ~10s loop);
+pre-desaturating it blends best.

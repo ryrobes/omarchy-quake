@@ -38,6 +38,7 @@ optdepends=(
   'omarchy: menu stub, plugin enable, Hyprland session'
   'tailscale: deathmatch over a tailnet'
   '7zip: faster shareware extraction (bsdtar is the fallback)'
+  'qt6-multimedia-ffmpeg: animated video backdrop in the panel'
 )
 source=(
   "$pkgname-$pkgver.tar.gz::https://github.com/ryrobes/omarchy-quake/archive/refs/tags/v$pkgver.tar.gz"
