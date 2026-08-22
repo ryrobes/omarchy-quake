@@ -65,8 +65,9 @@ install -m 0755 "$ROOT/lib/beacon.py" "$LIBDIR/lib/beacon.py"
 install -m 0755 "$ROOT/lib/nqctl.py" "$LIBDIR/lib/nqctl.py"
 install -m 0755 "$ENGINE" "$LIBDIR/vkquake"
 install -m 0644 "$ROOT/hypr/quake-omarchy.lua" "$SHAREDIR/hypr/quake.lua"
-install -m 0644 "$ROOT/plugin/quake-logo.svg" "$SHAREDIR/quake-logo.svg"
-install -m 0644 "$ROOT/share/org.omarchy.quake.svg" \
+rm -f "$SHAREDIR/quake-logo.svg"
+install -m 0644 "$ROOT/plugin/icon.svg" "$SHAREDIR/icon.svg"
+install -m 0644 "$ROOT/plugin/icon.svg" \
   "$ICONDIR/scalable/apps/org.omarchy.quake.svg"
 
 # Plugin files only (no nested symlinks — omarchy-plugin-validate forbids them).
@@ -90,6 +91,10 @@ if (( user_integration )); then
     "$HOME/.local/share/quake-omarchy"
 
   find "$PLUGIN_DEST" -maxdepth 1 -type f -name '*.qml' -delete
+  rm -f "$PLUGIN_DEST/demo-loop.mp4" \
+    "$PLUGIN_DEST/quake-logo.svg" \
+    "$PLUGIN_DEST/quake-logo-outline.svg" \
+    "$HOME/.local/share/quake-omarchy/quake-logo.svg"
   cp -f "$ROOT/plugin/"* "$PLUGIN_DEST/"
   touch "$PLUGIN_DEST"/*.qml "$PLUGIN_DEST"/*.js "$PLUGIN_DEST"/manifest.json 2>/dev/null || true
   if command -v omarchy-plugin-validate >/dev/null; then
@@ -98,9 +103,9 @@ if (( user_integration )); then
 
   # Older installs shipped a placeholder font; drop it.
   rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/fonts/QuakeQuattro.otf"
-  install -m 0644 "$ROOT/plugin/quake-logo.svg" \
-    "$HOME/.local/share/quake-omarchy/quake-logo.svg"
-  QUAKE_LOGO_SVG=$HOME/.local/share/quake-omarchy/quake-logo.svg \
+  install -m 0644 "$ROOT/plugin/icon.svg" \
+    "$HOME/.local/share/quake-omarchy/icon.svg"
+  QUAKE_ICON_SVG=$HOME/.local/share/quake-omarchy/icon.svg \
     bash "$ROOT/scripts/recolor-quake-icon.sh" || true
   bash "$ROOT/scripts/cleanup-launchers.sh" || true
 

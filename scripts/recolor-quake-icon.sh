@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Recolor the Quake Q to the active Omarchy foreground (transparent background).
+# Recolor the original geometric icon to the active Omarchy foreground.
 # Installed as a theme-set hook so app-launcher icons follow the theme.
 set -euo pipefail
 
 THEME_DIR=${OMARCHY_CURRENT_THEME:-${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/current/theme}
-SRC=${QUAKE_LOGO_SVG:-}
+SRC=${QUAKE_ICON_SVG:-${QUAKE_LOGO_SVG:-}}
 if [[ -z $SRC ]]; then
   for candidate in \
-    "$HOME/.local/share/quake-omarchy/quake-logo.svg" \
-    "$HOME/.config/omarchy/plugins/quake.omarchy/quake-logo.svg" \
-    /usr/share/omarchy-quake/quake-logo.svg \
-    /usr/local/share/omarchy-quake/quake-logo.svg
+    "$HOME/.local/share/quake-omarchy/icon.svg" \
+    "$HOME/.config/omarchy/plugins/quake.omarchy/icon.svg" \
+    /usr/share/omarchy-quake/icon.svg \
+    /usr/local/share/omarchy-quake/icon.svg
   do
     [[ -f $candidate ]] && SRC=$candidate && break
   done
@@ -40,9 +40,7 @@ from pathlib import Path
 import re, sys
 src, dest, color = sys.argv[1], sys.argv[2], sys.argv[3]
 text = Path(src).read_text()
-text = re.sub(r'fill="[^"]*"', f'fill="{color}"', text, count=1)
-if 'fill="' not in text:
-    text = text.replace("<path ", f'<path fill="{color}" ', 1)
+text = re.sub(r'(?i)(fill|stroke)="#[0-9a-f]{6}"', lambda m: f'{m.group(1)}="{color}"', text)
 Path(dest).write_text(text)
 PY
 

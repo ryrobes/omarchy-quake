@@ -70,11 +70,9 @@ omarchy-quake config renderer auto       # auto|gpu|software
 
 User data lives under XDG: config in `~/.config/quake-omarchy`, shareware/saves in `~/.local/share/quake-omarchy`, live status in `~/.local/state/quake-omarchy/status.json` (the QML hook).
 
-## Panel video backdrop (optional)
+## Panel artwork
 
-Drop a short, silent, square-ish clip at `plugin/demo-loop.mp4` and the panel
-plays it faintly behind the content — desaturated, tinted to the active theme,
-center-cropped to cover, paused while the panel is hidden. Needs
-`qt6-multimedia` + `qt6-multimedia-ffmpeg`; without them (or without the file)
-the static Q watermark is used. Keep the clip small (a few MB, ~10s loop);
-pre-desaturating it blends best.
+The panel uses an original geometric icon and a procedural seismograph backdrop.
+The package does not contain Quake logos, screenshots, gameplay footage, or game
+data. First Play downloads the original shareware archive, verifies its pinned
+SHA-256, and keeps `SLICNSE.TXT` alongside the extracted shareware data.

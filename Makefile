@@ -11,6 +11,7 @@ plugin-validate:
 
 test:
 	bash tests/test-classify.sh
+	bash tests/test-shareware.sh
 	bash tests/test-install-layout.sh
 	python3 lib/beacon.py ping 127.0.0.1 >/dev/null || true
 

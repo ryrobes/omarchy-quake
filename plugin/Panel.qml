@@ -578,10 +578,14 @@ Item {
     BorderSurface {
       id: card
       anchors.centerIn: parent
-      width: Math.min(Style.space(580), window.width - Style.gapsOut * 4)
+      // Keep bordered controls away from the Flickable's clip boundary. The
+      // card grows by the matching amount so the form itself stays 580px wide.
+      readonly property int contentEdgeGuard: Style.spacing.sm
+      width: Math.min(Style.space(580) + contentEdgeGuard * 2,
+                      window.width - Style.gapsOut * 4)
       readonly property int chrome: Style.spacing.panelPadding * 2 + borderTop + borderBottom
       readonly property int maxHeight: window.height - Style.gapsOut * 4
-      height: Math.min(body.implicitHeight + chrome, maxHeight)
+      height: Math.min(body.implicitHeight + contentEdgeGuard + chrome, maxHeight)
       implicitHeight: height
       radius: root.cornerRadius
       color: root.background
@@ -589,24 +593,15 @@ Item {
       padding: Style.spacing.panelPadding
       clip: true
 
-      // Animated backdrop when plugin/demo-loop.mp4 and qt6-multimedia
-      // exist; otherwise the Loader errors out quietly and the static
-      // watermark below stays.
-      Loader {
-        id: videoLoader
+      SignalBackdrop {
         anchors.fill: parent
-        asynchronous: true
-        source: Qt.resolvedUrl("VideoBackdrop.qml")
-        onLoaded: {
-          item.tint = Qt.binding(function() { return root.muted })
-          item.active = Qt.binding(function() { return root.opened })
-        }
+        color: root.muted
+        active: root.opened
       }
 
       QuakeWatermark {
         anchors.fill: parent
         color: root.muted
-        visible: !(videoLoader.status === Loader.Ready && videoLoader.item && videoLoader.item.showing)
       }
 
       MouseArea { anchors.fill: parent; onClicked: {} }
@@ -637,14 +632,15 @@ Item {
         anchors.bottomMargin: card.borderBottom + Style.spacing.panelPadding
         anchors.leftMargin: card.borderLeft + Style.spacing.panelPadding
         contentWidth: width
-        contentHeight: body.implicitHeight
+        contentHeight: body.implicitHeight + card.contentEdgeGuard
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
 
         Column {
           id: body
-          width: flick.width
+          x: card.contentEdgeGuard
+          width: Math.max(0, flick.width - card.contentEdgeGuard * 2)
           spacing: Style.spacing.rowGap
 
         PanelHero {

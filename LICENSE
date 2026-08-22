@@ -1,5 +1,11 @@
-omarchy-quake (launcher, Omarchy plugin, Hyprland rules) is provided under
-the MIT License.
+omarchy-quake (launcher, Omarchy plugin, original geometric icon and procedural
+backdrop, and Hyprland rules) is provided under the MIT License.
+
+This repository does not contain Quake game data, logos, screenshots, or
+gameplay footage. The launcher can download the original shareware archive on
+the user's behalf, verifies its pinned SHA-256, and installs the archive's
+SLICNSE.TXT alongside the extracted shareware data. Full Steam, GOG, and
+re-release data must be supplied by the user.
 
 vkQuake is GPLv2. It is cloned at build time from
 https://github.com/Novum/vkQuake and is not part of this source tree.

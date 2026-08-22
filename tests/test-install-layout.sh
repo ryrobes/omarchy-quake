@@ -29,6 +29,11 @@ lib=$pkg/usr/lib/omarchy-quake
 [[ -f $plugin/manifest.json ]]
 [[ -f $plugin/Panel.qml ]]
 [[ -f $plugin/Service.qml ]]
+[[ -f $plugin/SignalBackdrop.qml ]]
+[[ -f $plugin/icon.svg ]]
+[[ ! -e $plugin/demo-loop.mp4 ]]
+[[ ! -e $plugin/quake-logo.svg ]]
+[[ ! -e $plugin/quake-logo-outline.svg ]]
 [[ -f $pkg/usr/share/omarchy-quake/hypr/quake.lua ]]
 [[ -f $pkg/usr/share/icons/hicolor/scalable/apps/org.omarchy.quake.svg ]]
 [[ -f $desktop ]]
@@ -36,6 +41,11 @@ lib=$pkg/usr/lib/omarchy-quake
 grep -qx 'Exec=omarchy-quake panel' "$desktop"
 grep -qx 'Icon=org.omarchy.quake' "$desktop"
 grep -qx 'Name=Quake' "$desktop"
+cmp "$plugin/icon.svg" "$pkg/usr/share/icons/hicolor/scalable/apps/org.omarchy.quake.svg"
+if grep -RFl 'QtMultimedia\|demo-loop\.mp4\|quake-logo' "$pkg/usr/share/omarchy-quake" 2>/dev/null; then
+  echo "package tree contains removed third-party visual references" >&2
+  exit 1
+fi
 
 # Packaging must not touch $HOME (plugin enable is the Omarchy installer).
 if [[ -e $home/.config || -e $home/.local ]]; then
@@ -50,7 +60,11 @@ fi
 
 # User-prefix install still copies the plugin for local development.
 user=$tmp/user
-mkdir -p "$user"
+mkdir -p "$user/.config/omarchy/plugins/quake.omarchy" "$user/.local/share/quake-omarchy"
+touch "$user/.config/omarchy/plugins/quake.omarchy/demo-loop.mp4" \
+  "$user/.config/omarchy/plugins/quake.omarchy/quake-logo.svg" \
+  "$user/.config/omarchy/plugins/quake.omarchy/quake-logo-outline.svg" \
+  "$user/.local/share/quake-omarchy/quake-logo.svg"
 HOME=$user PREFIX=$user/.local SKIP_BUILD=1 QO_ENGINE=$fake \
   SKIP_SESSION=1 \
   bash "$ROOT/scripts/install.sh" >/dev/null
@@ -58,6 +72,10 @@ HOME=$user PREFIX=$user/.local SKIP_BUILD=1 QO_ENGINE=$fake \
 [[ ! -e $user/.local/bin/quake-omarchy ]]
 [[ -f $user/.config/omarchy/plugins/quake.omarchy/Panel.qml ]]
 [[ -f $user/.local/share/applications/org.omarchy.quake.desktop ]]
+[[ ! -e $user/.config/omarchy/plugins/quake.omarchy/demo-loop.mp4 ]]
+[[ ! -e $user/.config/omarchy/plugins/quake.omarchy/quake-logo.svg ]]
+[[ ! -e $user/.config/omarchy/plugins/quake.omarchy/quake-logo-outline.svg ]]
+[[ ! -e $user/.local/share/quake-omarchy/quake-logo.svg ]]
 if [[ -f $user/.config/omarchy/extensions/omarchy-menu.jsonc ]] &&
   grep -q 'games.quake' "$user/.config/omarchy/extensions/omarchy-menu.jsonc"; then
   echo "user install injected games.quake into the menu overlay" >&2

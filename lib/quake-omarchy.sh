@@ -920,6 +920,8 @@ QO_SHAREWARE_URLS=(
   "https://image.dosgamesarchive.com/games/quake106.zip"
   "https://raw.githubusercontent.com/Jason2Brownlee/QuakeOfficialArchive/main/bin/quake106.zip"
 )
+# All four mirrors above serve the same original quake106.zip byte stream.
+QO_SHAREWARE_SHA256="ec6c9d34b1ae0252ac0066045b6611a7919c2a0d78a3a66d9387a8f597553239"
 
 qo_lowercase_tree() {
   local root=$1
@@ -955,10 +957,13 @@ qo_fetch_shareware() {
   qo_mkdirs
   local dest
   dest=$(qo_shareware_dir)
-  if qo_has_pak0 "$dest"; then
+  if qo_has_pak0 "$dest" && [[ -s $dest/SLICNSE.TXT ]]; then
     qo_log "shareware already present at $dest"
     qo_status_set idle
     return 0
+  fi
+  if qo_has_pak0 "$dest"; then
+    qo_log "shareware license missing; refreshing the verified archive"
   fi
 
   local work zip
@@ -969,16 +974,20 @@ qo_fetch_shareware() {
 
   qo_status_patch fetch downloading 0 "Downloading Quake shareware"
 
-  local url ok=0
+  local url actual_sha ok=0
   for url in "${QO_SHAREWARE_URLS[@]}"; do
     qo_log "trying $url"
     if curl -L --fail --retry 1 --retry-delay 1 --connect-timeout 8 --max-time 90 --progress-bar -o "$zip" "$url"; then
-      ok=1
-      break
+      actual_sha=$(sha256sum "$zip" | awk '{print $1}')
+      if [[ $actual_sha == "$QO_SHAREWARE_SHA256" ]]; then
+        ok=1
+        break
+      fi
+      qo_log "rejecting shareware archive with unexpected SHA-256: $actual_sha"
     fi
     rm -f "$zip"
   done
-  (( ok )) || qo_die "could not download Quake shareware"
+  (( ok )) || qo_die "could not download a verified Quake shareware archive"
 
   qo_status_patch fetch extract 60 "Extracting shareware"
   qo_extract_archive "$zip" "$work/zip"
@@ -994,13 +1003,16 @@ qo_fetch_shareware() {
 
   qo_lowercase_tree "$work/id1src"
 
-  local pak
+  local pak license_file
   pak=$(find "$work/id1src" -iname 'pak0.pak' -print -quit)
   [[ -n $pak ]] || qo_die "shareware archive did not contain pak0.pak"
   qo_is_pak "$pak" || qo_die "extracted pak0.pak is not a Quake PAK"
+  license_file=$(find "$work/id1src" "$work/zip" -iname 'SLICNSE.TXT' -type f -print -quit)
+  [[ -n $license_file && -s $license_file ]] || qo_die "shareware archive did not contain SLICNSE.TXT"
 
   mkdir -p "$dest/id1"
   cp -f "$pak" "$dest/id1/pak0.pak"
+  cp -f "$license_file" "$dest/SLICNSE.TXT"
   # Keep any accompanying config/maps that came with shareware.
   local extra
   extra=$(dirname "$pak")
@@ -1009,9 +1021,10 @@ qo_fetch_shareware() {
   fi
 
   rm -rf "$work"
-  qo_has_pak0 "$dest" || qo_die "shareware install failed"
+  qo_has_pak0 "$dest" && [[ -s $dest/SLICNSE.TXT ]] || qo_die "shareware install failed"
   qo_log "shareware installed at $dest"
   qo_status_patch fetch done 100 "Shareware ready"
+  qo_status_set idle
 }
 
 # --- GPU / Wayland ---------------------------------------------------------
@@ -1912,6 +1925,13 @@ qo_ensure_data() {
   local edition=${1:-auto}
   local basedir
   if basedir=$(qo_pick_basedir "$edition"); then
+    # Releases before the verified downloader kept the managed PAK but dropped
+    # its agreement. Repair that install before it is selected for play.
+    if [[ $(qo_data_origin "$basedir") == shareware && ! -s $(qo_shareware_dir)/SLICNSE.TXT ]]; then
+      qo_notify "Refreshing shareware" "Restoring the license from the verified archive"
+      qo_fetch_shareware
+      basedir=$(qo_pick_basedir "$edition") || qo_die "shareware repair finished but pak0.pak is missing"
+    fi
     printf '%s\n' "$basedir"
     return 0
   fi
